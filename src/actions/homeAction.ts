@@ -1,18 +1,18 @@
 import shell from "shelljs";
 import open from "open";
 import got from "got";
-interface PypiRes{
+interface PypiRes {
   info: {
-    home_page:string
-  }
+    home_page: string;
+  };
 }
-interface PubRes{
-  latest:{
-    pubspec:{homepage:string}
-  }
+interface PubRes {
+  latest: {
+    pubspec: { homepage: string };
+  };
 }
 export async function openPypiHome(pkg: string) {
-  let res:PypiRes;
+  let res: PypiRes;
   try {
     res = await got(`https://pypi.python.org/pypi/${pkg}/json`, {
       timeout: {
@@ -25,7 +25,7 @@ export async function openPypiHome(pkg: string) {
   }
 }
 export async function openPub(pkg: string) {
-  let res:PubRes = await got(`https://pub.flutter-io.cn/api/packages/${pkg}`).json();
+  let res: PubRes = await got(`https://pub.flutter-io.cn/api/packages/${pkg}`).json();
   open(res.latest.pubspec.homepage);
 }
 export function openGit() {

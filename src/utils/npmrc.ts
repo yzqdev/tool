@@ -33,8 +33,6 @@ export const npmrc: Npmrc = {
 };
 
 export const env: Env = {
-  
-
   // https://github.com/nodejs/node-gyp/
   NODEJS_ORG_MIRROR: npmrc.disturl,
   IOJS_ORG_MIRROR: "{bin-mirrors}/iojs",
@@ -71,14 +69,13 @@ export const opts: Opts = {
   apt: apt,
   env: env,
 };
-type UrlParam=Opts|Apts|Npmrc |Env
-export function fixUrl(obj:any) {
+type UrlParam = Opts | Apts | Npmrc | Env;
+export function fixUrl(obj: any) {
   Object.keys(obj).forEach((key) => {
     if (obj[key]) {
-      if (typeof obj[key]==='string') {
-         obj[key] = obj[key].replace(/\{(\w+)-mirrors}/g, (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s);
+      if (typeof obj[key] === "string") {
+        obj[key] = obj[key].replace(/\{(\w+)-mirrors}/g, (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s);
       }
-     
     }
   });
   return obj;

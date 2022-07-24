@@ -26,8 +26,8 @@ export interface EnvPrompt {
 }
 
 export interface Env {
-  https_proxy?: string ;
-  http_proxy?: string  ;
+  https_proxy?: string;
+  http_proxy?: string;
 
   // https://github.com/nodejs/node-gyp/
   NODEJS_ORG_MIRROR: string | object;

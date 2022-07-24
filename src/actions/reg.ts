@@ -145,7 +145,7 @@ export function setNodeEnv() {
       throw err;
     }
     // 按行遍历原有配置，改其内容
-    let config: string|string[] = content
+    let config: string | string[] = content
       .toString()
       .match(/^.*$/gm)!
       .filter((line) => {
@@ -168,10 +168,9 @@ export function setNodeEnv() {
       console.log(key);
       if (npmrc[key]) {
         console.log("> npm config set", key, npmrc[key]);
-         if (typeof config!=='string') {
-            config.push(key + "=" + npmrc[key]);
-         }
-       
+        if (typeof config !== "string") {
+          config.push(key + "=" + npmrc[key]);
+        }
       }
     });
 
@@ -180,7 +179,7 @@ export function setNodeEnv() {
     }
 
     // 将配置转换为字符串
-    config = config.join("\n")  ;
+    config = config.join("\n");
     // 如果文件内容有变化，保存结果
     if (content.toString() !== config) {
       fs.writeFileSync(npmrcPath, config);

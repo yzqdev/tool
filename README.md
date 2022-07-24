@@ -5,11 +5,11 @@
 ## install
 
 ```shell
-pnpm add -g @yzqdev/cli 
+pnpm add -g @yzqdev/tool
 //or
-npm i -g @yzqdev/cli
+npm i -g @yzqdev/tool
 //or 
-yarn global add @yzqdev/cli
+yarn global add @yzqdev/tool
 ```
 
 ## Usage

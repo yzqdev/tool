@@ -5,7 +5,6 @@ import fs from "fs";
 import crypto from "crypto";
 import ora from "ora";
 import pc from "picocolors";
-import shell from "shelljs";
 import prettyBytes from "pretty-bytes";
 import * as path from "path";
 import { WebpInterface } from "../interfaces";
@@ -60,7 +59,7 @@ export class FileCommand extends AbstractCommand {
       .description("图片转换为webp")
       .option("-q, --quality")
       .action((img: string, option: WebpInterface) => {
-        console.log(img);
+        
         if (img) {
           toWebp(img, option);
         } else {

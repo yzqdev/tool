@@ -187,7 +187,7 @@ async function core(rootItemPath: string, options: FilesizeOpts = {}, returnType
     }
     ++fileNum.all;
   }
- 
+
   const folderSize = Array.from(fileSizes.values()).reduce((total, fileSize) => total + fileSize, 0);
 
   if (returnType.errors) {

@@ -1,6 +1,6 @@
 {
   "name": "@yzqdev/tool",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "yzqdev",
     "url": "https://github.com/yzqdev"
@@ -8,7 +8,7 @@
   "repository": {
     "url": "https://github.com/yzqdev/tool"
   },
-  "description": "A small tool.",
+  "description": "A small tool containers many features",
   "publishConfig": {
     "access": "public"
   },
@@ -22,6 +22,7 @@
   "bin": {
     "tool": "bin/tool.mjs"
   },
+   "keywords": ["cli","command","terminal","utils"],
   "scripts": {
     "dev": "node bin/tool.mjs",
     "clean": "rimraf dist",
