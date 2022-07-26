@@ -31,10 +31,10 @@ export class FileCommand extends AbstractCommand {
     fileCmd
       .command("rename")
       .option("-f, --from <file>", "输入文件")
-      .option("-o, --out <file>", "输出文件")
+      .option("-t, --to <file>", "输出文件")
       .description("转为ts")
       .action((options: RenameOption) => {
-        console.log(options);
+        
         renameToTs("./", options);
       });
     fileCmd

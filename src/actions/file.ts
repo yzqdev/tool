@@ -6,7 +6,7 @@ import { SingleDirPath } from "../interfaces/mdInterface";
 import pc from "picocolors";
 import shell from "shelljs";
 import { WebpInterface } from "../interfaces";
-import { RenameOption } from "../interfaces/Ioption";
+import { RenameOption, RenameParams } from "../interfaces/Ioption";
 import { FilesizeOpts } from "../interfaces/actionOpts";
 import { join } from "path";
 import { writeFileSync } from "fs";
@@ -33,25 +33,40 @@ export function genName(dir: string) {
   fs.writeFileSync("name.txt", arr.join("\n"));
 }
 
-function fileRename(filePath: string, options: RenameOption) {
-  let shouldRenameExt = options.from ? options.from.split(",") : [".mjs", ".js", ".cjs"];
+/**
+ * 重命名文件后缀
+ * @param dir 
+ * @param options 
+ */
+export function renameToTs(dir: string, options: RenameOption) {
+  let filePath = path.resolve(dir);
+  //调用文件遍历方法
+   let fromExt = options.from ? options.from.split(",") : [".mjs", ".js", ".cjs"];
 
-  let renameTo = options.to ? options.to : ".ts";
-  if (shouldRenameExt) {
-    for (let item of shouldRenameExt) {
-      console.log(item);
+   let toExt = options.to ? options.to : ".ts";
+ 
+  if (fromExt) {
+    for (let item of fromExt) {
       if (!item.includes(".")) {
-        throw new Error("请输入输入参数后缀,类似 .txt,.js");
+        console.log(pc.red("请输入输入参数后缀,类似 .txt,.js"));
+        return;
       }
     }
   }
   if (options.to) {
     if (!options.to.includes(".")) {
-      throw new Error("请输入参数后缀,类似 .txt,.js");
+      console.log(pc.red("请输入输入参数后缀,类似 .txt,.js"));
+      return;
     }
   }
+    console.log(pc.bgGreen(`rename extension ${fromExt.join(',')} to ${toExt}`) );
+  fileRename(filePath,  {fromExt,toExt});
+}
+function fileRename(filePath: string, options: RenameParams) {
 
-  let excludeDir = ["node_modules", ".vuepress"];
+
+
+  let excludeDir = ["node_modules", ".vuepress",'.git'];
   //   console.log(8977)
   //根据文件路径读取文件，返回文件列表
   fs.readdir(filePath, function (err, files) {
@@ -62,7 +77,7 @@ function fileRename(filePath: string, options: RenameOption) {
       files.forEach(function (filename) {
         //获取当前文件的绝对路径
         let filedir = path.join(filePath, filename);
-        console.log("file dir =>", filedir);
+        // console.log("file dir =>", filedir);
         //根据文件路径获取文件信息，返回一个fs.Stats对象
 
         fs.stat(filedir, function (eror, stats) {
@@ -74,12 +89,12 @@ function fileRename(filePath: string, options: RenameOption) {
           let isFile = stats.isFile(); //是文件
           let isDir = stats.isDirectory(); //是文件夹
           if (isFile) {
-            if (shouldRenameExt.includes(path.extname(filedir))) {
-              fs.rename(filedir, filedir.replace(path.extname(filedir), renameTo), (err) => {
+            if (options.fromExt.includes(path.extname(filedir))) {
+              fs.rename(filedir, filedir.replace(path.extname(filedir), options.toExt), (err) => {
                 if (err) {
                   throw err;
                 }
-                console.log(`rename ${path.basename(filedir)} to ${path.basename(filedir.replace(path.extname(filedir), ".ts"))}`);
+                console.log(`rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(path.basename(filedir.replace(path.extname(filedir), options.toExt)))}`);
               });
             }
           }
@@ -94,12 +109,11 @@ function fileRename(filePath: string, options: RenameOption) {
   });
 }
 
-export function renameToTs(dir: string, options: RenameOption) {
-  let filePath = path.resolve(dir);
-  //调用文件遍历方法
-  fileRename(filePath, options);
-}
-
+/**
+ * 删除后缀为..的文件
+ * @param ext 
+ * @param dir 
+ */
 export function deleteFileRecurse(ext: string, dir: string) {
   const files = fs.readdirSync(dir);
 
@@ -107,8 +121,8 @@ export function deleteFileRecurse(ext: string, dir: string) {
     let fullPath = path.join(dir, item);
     console.log(pc.red(fullPath));
     const stat = fs.statSync(fullPath);
-
-    if (stat.isDirectory() && item != "res" && item != ".vuepress") {
+    let ignores = ["res", "vuepress", ".git", "node_modules"];
+    if (stat.isDirectory() && !ignores.includes(item)) {
       console.log("删除的路径");
       console.log(`进入文件夹:${path.join(dir, item)}`);
       deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
