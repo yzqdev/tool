@@ -1,6 +1,6 @@
 {
   "name": "@yzqdev/tool",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": {
     "name": "yzqdev",
     "url": "https://github.com/yzqdev"
@@ -22,7 +22,12 @@
   "bin": {
     "tool": "bin/tool.mjs"
   },
-   "keywords": ["cli","command","terminal","utils"],
+  "keywords": [
+    "cli",
+    "command",
+    "terminal",
+    "utils"
+  ],
   "scripts": {
     "dev": "node bin/tool.mjs",
     "clean": "rimraf dist",
