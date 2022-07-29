@@ -1,8 +1,6 @@
 import fg from "fast-glob";
-import prettyBytes from "pretty-bytes";
 import * as fs from "fs";
 import * as path from "path";
-import { SingleDirPath } from "../interfaces/mdInterface";
 import pc from "picocolors";
 import shell from "shelljs";
 import { WebpInterface } from "../interfaces";
@@ -35,16 +33,16 @@ export function genName(dir: string) {
 
 /**
  * 重命名文件后缀
- * @param dir 
- * @param options 
+ * @param dir
+ * @param options
  */
 export function renameToTs(dir: string, options: RenameOption) {
   let filePath = path.resolve(dir);
   //调用文件遍历方法
-   let fromExt = options.from ? options.from.split(",") : [".mjs", ".js", ".cjs"];
+  let fromExt = options.from ? options.from.split(",") : [".mjs", ".js", ".cjs"];
 
-   let toExt = options.to ? options.to : ".ts";
- 
+  let toExt = options.to ? options.to : ".ts";
+
   if (fromExt) {
     for (let item of fromExt) {
       if (!item.includes(".")) {
@@ -59,14 +57,11 @@ export function renameToTs(dir: string, options: RenameOption) {
       return;
     }
   }
-    console.log(pc.bgGreen(`rename extension ${fromExt.join(',')} to ${toExt}`) );
-  fileRename(filePath,  {fromExt,toExt});
+  console.log(pc.bgGreen(`rename extension ${fromExt.join(",")} to ${toExt}`));
+  fileRename(filePath, { fromExt, toExt });
 }
 function fileRename(filePath: string, options: RenameParams) {
-
-
-
-  let excludeDir = ["node_modules", ".vuepress",'.git'];
+  let excludeDir = ["node_modules", ".vuepress", ".git"];
   //   console.log(8977)
   //根据文件路径读取文件，返回文件列表
   fs.readdir(filePath, function (err, files) {
@@ -111,8 +106,8 @@ function fileRename(filePath: string, options: RenameParams) {
 
 /**
  * 删除后缀为..的文件
- * @param ext 
- * @param dir 
+ * @param ext
+ * @param dir
  */
 export function deleteFileRecurse(ext: string, dir: string) {
   const files = fs.readdirSync(dir);

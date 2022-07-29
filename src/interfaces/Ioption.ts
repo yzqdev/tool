@@ -1,7 +1,8 @@
 export interface RenameOption {
   from: string;
   to: string;
-}export interface RenameParams {
+}
+export interface RenameParams {
   fromExt: string[];
   toExt: string;
 }

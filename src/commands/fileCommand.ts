@@ -34,7 +34,6 @@ export class FileCommand extends AbstractCommand {
       .option("-t, --to <file>", "输出文件")
       .description("转为ts")
       .action((options: RenameOption) => {
-        
         renameToTs("./", options);
       });
     fileCmd
@@ -59,7 +58,6 @@ export class FileCommand extends AbstractCommand {
       .description("图片转换为webp")
       .option("-q, --quality")
       .action((img: string, option: WebpInterface) => {
-        
         if (img) {
           toWebp(img, option);
         } else {

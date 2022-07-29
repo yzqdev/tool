@@ -1,3 +1,10 @@
+import { pipeline } from "node:stream/promises";
+import { createWriteStream } from "node:fs";
+import got from "got";
+
+import * as crypto from "crypto";
+import mime from "mime";
+import { customAlphabet } from "nanoid";
 /*
   1、fs.stat 获取文件状态
   2、fs.readdir 读取文件夹数据
@@ -9,8 +16,6 @@ import * as fs from "fs";
 import pc from "picocolors";
 //操作路径
 import path from "node:path";
-import axios from "axios";
-import { powershellFile } from "../utils/fileUtils";
 import { DirPath, SingleDirPath } from "../interfaces/mdInterface";
 
 /**
@@ -206,41 +211,34 @@ export function getAllMarkdowns(inputPath: any) {
   });
 }
 
-async function downloadImage(url: string, dest: string) {
-  // axios image download with response type "stream"
-  const response = await axios({
-    method: "GET",
-    url: url,
-    responseType: "stream",
-  });
-
-  response.data.pipe(fs.createWriteStream(dest));
-}
-
+/**
+ * 把markdown里面的文件下载到本地
+ * @param file markdown文件
+ */
 export async function genMarkdownImgs(file: string) {
-  let beforeName = powershellFile(file);
-  let backupFile = `${file}.bak`;
+  let beforeName = path.resolve(process.cwd(), file);
+  let backupFile = `${path.basename(beforeName, ".md")}.bak.md`;
   let data = fs.readFileSync(beforeName);
   let reg = new RegExp(/!\[.*\]\(.+\)/, "gi");
-
+  let imgFolder = "img";
   let imgs: string[] = data.toString().match(reg) ?? [];
   for (let item of imgs) {
-    console.log(pc.cyan(item));
-    console.log("img -length", imgs.length);
-    let uri = replacerToUrl(item);
-    console.log(uri);
-    let itemName = replacerFileName(item);
-    if (!fs.existsSync("res")) {
-      fs.mkdirSync("res");
+    let uri = replacerMdTagToUrl(item);
+    console.log("图片url=>", pc.cyan(`${uri}`));
+    let fileId = replacerFileName(item);
+    if (!fs.existsSync(imgFolder)) {
+      fs.mkdirSync(imgFolder);
     }
-    await downloadImage(uri, "res/" + itemName);
-
-    await writeMd();
+    await downloadImage(uri, imgFolder, fileId);
   }
-  function replacerToUrl(match: string) {
-    let str: string = match.match(/http.+\)/)![0] ?? "";
-
-    return str.substring(0, str.length - 1);
+  function replacerMdTagToUrl(urlString: string) {
+    let reg = new RegExp(/\((.+)\)/, "g");
+    let pureUrl = reg.exec(urlString)![0];
+    let httpStr = pureUrl.slice(1, pureUrl.length - 1);
+    if (!httpStr.includes("http")) {
+      httpStr = `https://${pureUrl}`;
+    }
+    return httpStr;
   }
   /**
    * 生成如下的格式(1624847415629-4a7a5f1e-7644-4370-9ed7-e1f83ce4873f.png)
@@ -248,24 +246,57 @@ export async function genMarkdownImgs(file: string) {
    * @returns
    */
   function replacerFileName(fileName: string) {
-    let extReg = new RegExp(/\d*-.*\.(png|jpg|gif|webp|awebp)/, "gi");
-    let spited = fileName.split("/");
-    let finalName = spited[spited.length - 1].substring(0, spited[spited.length - 1].length - 1);
+    // let extReg = new RegExp(/\d*-.*\.(png|jpg|gif|webp|awebp)/, "gi");
+    // let spited = fileName.split("/");
+    // let finalName = spited[spited.length - 1].substring(0, spited[spited.length - 1].length - 1);
+    // console.log(pc.magenta(`最后的文件名:${finalName}`));
+    let finalName = crypto.createHash("md5").update(fileName).digest("hex");
+
     return finalName;
-    // let resArr: RegExpMatchArray = fileName.match(/\/\w*/gi);
-    // console.log(resArr[resArr.length - 1].slice(1));
-    // if (extReg.test(fileName)) {
-    //   return fileName.match(extReg)[0];
-    // } else {
-    //   return resArr[resArr.length - 1].slice(1) + ".png";
-    // }
   }
-  function replacerMd(match: string) {
-    return `![${replacerFileName(match)}](./res/${replacerFileName(match)})`;
-  }
-  function writeMd() {
-    let arr = data.toString().replaceAll(reg, replacerMd);
-    fs.writeFileSync(backupFile, data.toString());
-    fs.writeFileSync(beforeName, arr);
+  /**
+   * 下载文件
+   * @param url 下载图片地址
+   * @param folder 文件地址
+   * @param fileId
+   */
+  async function downloadImage(url: string, folder: string, fileId: string) {
+    if (!url.includes("http")) {
+      url = "https://" + url;
+    }
+    const readStream = got.stream(url);
+
+    const onError = (error: any) => {
+      console.log(pc.red(error));
+      // Do something with it.
+    };
+
+    readStream.on("response", async (response) => {
+      if (response.headers.age > 3600) {
+        console.log("Failure - response too old");
+        readStream.destroy(); // Destroy the stream to prevent hanging resources.
+        return;
+      }
+
+      readStream.off("error", onError);
+
+      try {
+        let contentType = response.headers["content-type"];
+        let fileName = fileId + "." + mime.getExtension(contentType);
+
+        await pipeline(readStream, createWriteStream(path.join(folder, fileName)));
+        //写入文件
+        function replacerMd(match: string) {
+          return `![${replacerFileName(match)}](./${imgFolder}/${fileName})`;
+        }
+        let arr = data.toString().replaceAll(reg, replacerMd);
+        fs.writeFileSync(backupFile, data.toString());
+        fs.writeFileSync(beforeName, arr);
+      } catch (error) {
+        onError(error);
+      }
+    });
+
+    readStream.once("error", onError);
   }
 }
