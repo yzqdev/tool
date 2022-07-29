@@ -6,5 +6,5 @@
   "quoteProps": "as-needed",
   "embeddedLanguageFormatting": "off",
   "insertPragma": false,
-  "printWidth": 1000
+  "printWidth": 80
 }

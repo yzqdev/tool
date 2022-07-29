@@ -1,6 +1,14 @@
 import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
-import { deleteByExtension, genName, genTxt, getFolderSize, renameToTs, toWebp, transferToWebp } from "../actions/file";
+import {
+  deleteByExtension,
+  genName,
+  genTxt,
+  getFolderSize,
+  renameToTs,
+  toWebp,
+  transferToWebp,
+} from "../actions/file";
 import fs from "fs";
 import crypto from "crypto";
 import ora from "ora";
@@ -70,7 +78,10 @@ export class FileCommand extends AbstractCommand {
       .description("查看文件夹大小")
       .action(async (folder) => {
         let start = performance.now();
-        const spinner = ora({ discardStdin: false, text: pc.cyan(`计算${folder ? folder : "当前"}文件夹大小中...\n`) }).start();
+        const spinner = ora({
+          discardStdin: false,
+          text: pc.cyan(`计算${folder ? folder : "当前"}文件夹大小中...\n`),
+        }).start();
         let res: FilesizeResult;
         if (folder) {
           res = await getFolderSize(folder);
@@ -81,7 +92,10 @@ export class FileCommand extends AbstractCommand {
           let end = performance.now();
           spinner.succeed("查询完毕,用时" + formatDuring(end - start));
         }
-        console.log(pc.cyan(`文件夹的大小是:`), prettyBytes(res.size, { locale: "zh" }));
+        console.log(
+          pc.cyan(`文件夹的大小是:`),
+          prettyBytes(res.size, { locale: "zh" })
+        );
         console.log(pc.cyan(`文件数量:`), pc.green(`${res.all - res.folder}`));
         console.log(pc.cyan(`文件夹数量:`), pc.green(`${res.folder}`));
       });

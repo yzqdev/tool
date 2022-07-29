@@ -1,6 +1,6 @@
 {
   "name": "@yzqdev/tool",
-  "version": "0.1.3",
+  "version": "0.2.0",
   "author": {
     "name": "yzqdev",
     "url": "https://github.com/yzqdev"
@@ -33,7 +33,7 @@
     "clean": "rimraf dist",
     "devbuild": "tsup --config tsup.dev.ts",
     "build": "tsup",
-    "lint": "prettier --write src/**/*.{ts,js}",
+    "lint": "prettier --write src/**/*.{ts,js} package.json tsconfig.json",
     "p": "tsup&&pnpm dlx bumpp&&npm publish"
   },
   "dependencies": {

@@ -3,13 +3,11 @@ import shell from "shelljs";
 import pc from "picocolors";
 import inquirer from "inquirer";
 import * as fs from "fs";
-import * as path from "path";
-import * as os from "os";
 import { fixUrl, isWin, npmrc } from "../utils/npmrc";
 import { EnvPrompt } from "../interfaces/npmInterface";
 import { ToolConfig } from "../toolConfig";
 import { confPath, npmrcPath, pipPath } from "../constants/dirs";
-import { copyFile } from "../utils/fileUtils";
+import { copy, copyFile, vendorFile } from "../utils/fileUtils";
 
 export async function setAllReg() {
   let toolConfig = new ToolConfig();
@@ -78,11 +76,13 @@ export function setPythonEnv() {
   if (!shell.which("pip")) {
     shell.echo("你还没有安装python,pip,请注意!");
     if (isWin) {
-      copyFile(path.resolve(__dirname, "../../vendor", "pip.ini"), pipPath);
+      copy(vendorFile("pip.ini", "conf"), pipPath);
     }
     shell.exit(1);
   }
-  shell.exec(`pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`);
+  shell.exec(
+    `pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`
+  );
   shell.exec(`pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn`);
   console.log(pc.cyan("设置成功"));
 }

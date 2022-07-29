@@ -1,6 +1,13 @@
 import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
-import { removeConfigs, setAllReg, setElectronEnv, setFlutter, setNodeEnv, setPythonEnv } from "../actions/reg";
+import {
+  removeConfigs,
+  setAllReg,
+  setElectronEnv,
+  setFlutter,
+  setNodeEnv,
+  setPythonEnv,
+} from "../actions/reg";
 import pc from "picocolors";
 export type LangType = "py" | "node" | "flutter" | "electron";
 export class RegCommand extends AbstractCommand {

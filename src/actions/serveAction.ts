@@ -14,14 +14,20 @@ export async function expServer(option: ServeOption) {
   console.log(path.resolve());
   console.log(option.dir);
   let dir = option.dir ?? "/";
-  app.use(dir, express.static(path.resolve()), serveIndex(path.resolve(), { icons: true }));
+  app.use(
+    dir,
+    express.static(path.resolve()),
+    serveIndex(path.resolve(), { icons: true })
+  );
 
   app.listen(port, () => {
     let message = pc.green("Serving!");
     const ip = getNetworkAddress();
     let httpMode = "http";
     let localAddress = `${httpMode}://localhost:${port}${option.dir ?? ""}`;
-    let networkAddress = ip ? `${httpMode}://${ip}:${port}${option.dir ?? ""}` : null;
+    let networkAddress = ip
+      ? `${httpMode}://${ip}:${port}${option.dir ?? ""}`
+      : null;
     if (localAddress) {
       const prefix = networkAddress ? "- " : "";
       const space = networkAddress ? "            " : "  ";

@@ -1,6 +1,12 @@
 import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
-import { genMarkdownImgs, genReadme, genRecurseReadme, genSingleReadme, getAllMarkdowns } from "../actions/md";
+import {
+  genMarkdownImgs,
+  genReadme,
+  genRecurseReadme,
+  genSingleReadme,
+  getAllMarkdowns,
+} from "../actions/md";
 
 import * as path from "path";
 

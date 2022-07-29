@@ -25,7 +25,9 @@ export async function openPypiHome(pkg: string) {
   }
 }
 export async function openPub(pkg: string) {
-  let res: PubRes = await got(`https://pub.flutter-io.cn/api/packages/${pkg}`).json();
+  let res: PubRes = await got(
+    `https://pub.flutter-io.cn/api/packages/${pkg}`
+  ).json();
   open(res.latest.pubspec.homepage);
 }
 export function openGit() {

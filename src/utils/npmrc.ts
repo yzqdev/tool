@@ -16,7 +16,8 @@ export const npmrc: Npmrc = {
   "grpc-node-binary-host-mirror": "{bin-mirrors}",
   "hackrf-binary-host-mirror": "{bin-mirrors}/hackrf/v{version}",
   "leveldown-binary-host-mirror": "{bin-mirrors}/leveldown/v{version}",
-  "leveldown-hyper-binary-host-mirror": "{bin-mirrors}/leveldown-hyper/v{version}",
+  "leveldown-hyper-binary-host-mirror":
+    "{bin-mirrors}/leveldown-hyper/v{version}",
   "mknod-binary-host-mirror": "{bin-mirrors}/mknod/v{version}",
   "node-sqlite3-binary-host-mirror": "{bin-mirrors}",
   "node-tk5-binary-host-mirror": "{bin-mirrors}/node-tk5/v{version}",
@@ -26,7 +27,8 @@ export const npmrc: Npmrc = {
   "profiler-binary-host-mirror": "{bin-mirrors}/node-inspector/",
   "puppeteer-download-host": "{bin-mirrors}",
   "rabin-binary-host-mirror": "{bin-mirrors}/rabin/v{version}",
-  "sodium-prebuilt-binary-host-mirror": "{bin-mirrors}/sodium-prebuilt/v{version}",
+  "sodium-prebuilt-binary-host-mirror":
+    "{bin-mirrors}/sodium-prebuilt/v{version}",
   "sqlite3-binary-site": "{bin-mirrors}/sqlite3",
   "utp-native-binary-host-mirror": "{bin-mirrors}/utp-native/v{version}",
   "zmq-prebuilt-binary-host-mirror": "{bin-mirrors}/zmq-prebuilt/v{version}",
@@ -74,7 +76,10 @@ export function fixUrl(obj: any) {
   Object.keys(obj).forEach((key) => {
     if (obj[key]) {
       if (typeof obj[key] === "string") {
-        obj[key] = obj[key].replace(/\{(\w+)-mirrors}/g, (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s);
+        obj[key] = obj[key].replace(
+          /\{(\w+)-mirrors}/g,
+          (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s
+        );
       }
     }
   });

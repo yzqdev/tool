@@ -33,5 +33,8 @@ export const flutterCmd = [
   ["flutter build windows", "打包发布windows"],
   ["flutter create --platforms=windows .", "添加windows支持"],
   ["flutter build apk --split-per-abi", "分开打包"],
-  ["flutter build apk --obfuscate --split-debug-info debuginfo   --target-platform android-arm,android-arm64,android-x64 --split-per-abi", "分开打包"],
+  [
+    "flutter build apk --obfuscate --split-debug-info debuginfo   --target-platform android-arm,android-arm64,android-x64 --split-per-abi",
+    "分开打包",
+  ],
 ];

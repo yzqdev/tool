@@ -1,6 +1,11 @@
 import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
-import { flutterCommands, npmActions, pnpmCommands, yarnActions } from "../actions/cmds";
+import {
+  flutterCommands,
+  npmActions,
+  pnpmCommands,
+  yarnActions,
+} from "../actions/cmds";
 
 export class CmdCommand extends AbstractCommand {
   load(program: Command): void {

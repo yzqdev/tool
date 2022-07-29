@@ -9,7 +9,10 @@ import { version } from "../package.json"; // assert { type: "json" };
 const bootstrap = () => {
   const program = new commander.Command();
 
-  program.version(version, "-v, --version", "当前版本.").usage("<command> [options]").helpOption("-h, --help", "如何使用");
+  program
+    .version(version, "-v, --version", "当前版本.")
+    .usage("<command> [options]")
+    .helpOption("-h, --help", "如何使用");
   CommandLoader.load(program);
   program.parse(process.argv);
   if (!process.argv.slice(2).length) {

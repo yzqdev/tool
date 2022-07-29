@@ -60,7 +60,10 @@ export function genReadme(inputPath: any) {
       } else {
         let fileName = "README.md";
         let content = "# " + filePath.split("\\").pop();
-        fs.writeFileSync(path.join(filePath, fileName), `\n---\nindex: false\n---\n` + content);
+        fs.writeFileSync(
+          path.join(filePath, fileName),
+          `\n---\nindex: false\n---\n` + content
+        );
       }
       let files = fs.readdirSync(filePath);
       files.forEach((file) => {
@@ -139,7 +142,11 @@ export function genSingleReadme(inputPath: any) {
       const stat = fs.statSync(fullPath);
       // console.log(path.extname(item));
       // console.log(fullPath);
-      if (stat.isDirectory() || path.extname(item).toLowerCase() != ".md" || item.toLowerCase() == "readme.md") {
+      if (
+        stat.isDirectory() ||
+        path.extname(item).toLowerCase() != ".md" ||
+        item.toLowerCase() == "readme.md"
+      ) {
         //   console.log("not markdown", item.toString());
       } else {
         let data = fs.readFileSync(fullPath);
@@ -203,12 +210,17 @@ export function getAllMarkdowns(inputPath: any) {
   let filesList: string[] = [];
   readFileList(inputPath, filesList);
   console.log(filesList);
-  fs.writeFile("filelist.txt", filesList.join(`\n`), { encoding: "utf-8" }, (err: any) => {
-    if (err) {
-    } else {
-      console.log("success");
+  fs.writeFile(
+    "filelist.txt",
+    filesList.join(`\n`),
+    { encoding: "utf-8" },
+    (err: any) => {
+      if (err) {
+      } else {
+        console.log("success");
+      }
     }
-  });
+  );
 }
 
 /**
@@ -284,7 +296,10 @@ export async function genMarkdownImgs(file: string) {
         let contentType = response.headers["content-type"];
         let fileName = fileId + "." + mime.getExtension(contentType);
 
-        await pipeline(readStream, createWriteStream(path.join(folder, fileName)));
+        await pipeline(
+          readStream,
+          createWriteStream(path.join(folder, fileName))
+        );
         //写入文件
         function replacerMd(match: string) {
           return `![${replacerFileName(match)}](./${imgFolder}/${fileName})`;

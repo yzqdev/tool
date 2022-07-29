@@ -39,7 +39,9 @@ export function genName(dir: string) {
 export function renameToTs(dir: string, options: RenameOption) {
   let filePath = path.resolve(dir);
   //调用文件遍历方法
-  let fromExt = options.from ? options.from.split(",") : [".mjs", ".js", ".cjs"];
+  let fromExt = options.from
+    ? options.from.split(",")
+    : [".mjs", ".js", ".cjs"];
 
   let toExt = options.to ? options.to : ".ts";
 
@@ -85,12 +87,22 @@ function fileRename(filePath: string, options: RenameParams) {
           let isDir = stats.isDirectory(); //是文件夹
           if (isFile) {
             if (options.fromExt.includes(path.extname(filedir))) {
-              fs.rename(filedir, filedir.replace(path.extname(filedir), options.toExt), (err) => {
-                if (err) {
-                  throw err;
+              fs.rename(
+                filedir,
+                filedir.replace(path.extname(filedir), options.toExt),
+                (err) => {
+                  if (err) {
+                    throw err;
+                  }
+                  console.log(
+                    `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
+                      path.basename(
+                        filedir.replace(path.extname(filedir), options.toExt)
+                      )
+                    )}`
+                  );
                 }
-                console.log(`rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(path.basename(filedir.replace(path.extname(filedir), options.toExt)))}`);
-              });
+              );
             }
           }
           if (isDir) {
@@ -136,9 +148,16 @@ export function deleteByExtension(ext: string, dir: string = "./") {
 export function toWebp(img: string, option: WebpInterface) {
   let reg = new RegExp(/(.jpg|.png|.jpeg|.gif|.bmp)$/);
   if (shell.which("cwebp")) {
-    console.log(pc.red("你还没有安装cwebp! https://developers.google.cn/speed/webp/docs/cwebp"));
+    console.log(
+      pc.red(
+        "你还没有安装cwebp! https://developers.google.cn/speed/webp/docs/cwebp"
+      )
+    );
   }
-  let script = `cwebp.exe -q ${option.quality ?? 90} ${img} -o ${img?.replace(reg, ".webp")}`;
+  let script = `cwebp.exe -q ${option.quality ?? 90} ${img} -o ${img?.replace(
+    reg,
+    ".webp"
+  )}`;
   console.log(script);
   shell.exec(script);
   console.log(pc.cyan("转换成功!"));
@@ -166,11 +185,18 @@ export function transferToWebp(dir: string, option: WebpInterface) {
  *
  * @returns {Promise<{size: number, errors: Array<Error> | null}>} - An object containing the size of the folder in bytes and a list of encountered errors.
  */
-export async function getFolderSize(itemPath: string, options?: FilesizeOpts): Promise<any> {
+export async function getFolderSize(
+  itemPath: string,
+  options?: FilesizeOpts
+): Promise<any> {
   return await core(itemPath, options, { errors: true });
 }
 
-async function core(rootItemPath: string, options: FilesizeOpts = {}, returnType: { strict?: boolean; errors?: boolean } = {}) {
+async function core(
+  rootItemPath: string,
+  options: FilesizeOpts = {},
+  returnType: { strict?: boolean; errors?: boolean } = {}
+) {
   // const fs = options.fs || (await import("fs/promises"));
   let fileNum = {
     all: 0,
@@ -184,20 +210,31 @@ async function core(rootItemPath: string, options: FilesizeOpts = {}, returnType
   async function processItem(itemPath: string) {
     if (options.ignore?.test(itemPath)) return;
 
-    const stats = returnType.strict ? fs.lstatSync(itemPath) : fs.lstatSync(itemPath);
+    const stats = returnType.strict
+      ? fs.lstatSync(itemPath)
+      : fs.lstatSync(itemPath);
     if (typeof stats !== "object") return;
     fileSizes.set(stats.ino, stats.size);
 
     if (stats.isDirectory()) {
       ++fileNum.folder;
-      const directoryItems = returnType.strict ? fs.readdirSync(itemPath) : fs.readdirSync(itemPath);
+      const directoryItems = returnType.strict
+        ? fs.readdirSync(itemPath)
+        : fs.readdirSync(itemPath);
       if (typeof directoryItems !== "object") return;
-      await Promise.all(directoryItems.map((directoryItem: string) => processItem(join(itemPath, directoryItem))));
+      await Promise.all(
+        directoryItems.map((directoryItem: string) =>
+          processItem(join(itemPath, directoryItem))
+        )
+      );
     }
     ++fileNum.all;
   }
 
-  const folderSize = Array.from(fileSizes.values()).reduce((total, fileSize) => total + fileSize, 0);
+  const folderSize = Array.from(fileSizes.values()).reduce(
+    (total, fileSize) => total + fileSize,
+    0
+  );
 
   if (returnType.errors) {
     return {
