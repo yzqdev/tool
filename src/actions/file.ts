@@ -1,34 +1,33 @@
-import fg from "fast-glob";
-import * as fs from "fs";
 import * as path from "path";
 import pc from "picocolors";
 import shell from "shelljs";
-import { WebpInterface } from "../interfaces";
-import { RenameOption, RenameParams } from "../interfaces/Ioption";
-import { FilesizeOpts } from "../interfaces/actionOpts";
+import { WebpInterface } from "@/interfaces";
+import { RenameOption, RenameParams } from "@/interfaces/Ioption";
+import { FilesizeOpts } from "@/interfaces/actionOpts";
 import { join } from "path";
-import { writeFileSync } from "fs";
 
-export function genTxt(dir: string) {
-  let files = fs.readdirSync(dir);
+import { lstat, readdir, rename, stat, unlink, writeFile } from "fs/promises";
+
+export async function genTxt(dir: string) {
+  let files = await readdir(dir);
 
   let arr = [];
   for (let i of files) {
     arr.push(`"${encodeURIComponent(i)}"`);
   }
 
-  fs.writeFileSync("arr.txt", `[${arr.join(",")}]`);
+  await writeFile("arr.txt", `[${arr.join(",")}]`);
 }
 
-export function genName(dir: string) {
-  let files = fs.readdirSync(dir);
+export async function genName(dir: string) {
+  let files = await readdir(dir);
 
   let arr = [];
   for (let i of files) {
     arr.push(`"${i}"`);
   }
 
-  fs.writeFileSync("name.txt", arr.join("\n"));
+  await writeFile("name.txt", arr.join("\n"));
 }
 
 /**
@@ -36,7 +35,7 @@ export function genName(dir: string) {
  * @param dir
  * @param options
  */
-export function renameToTs(dir: string, options: RenameOption) {
+export async function renameToTs(dir: string, options: RenameOption) {
   let filePath = path.resolve(dir);
   //调用文件遍历方法
   let fromExt = options.from
@@ -60,60 +59,55 @@ export function renameToTs(dir: string, options: RenameOption) {
     }
   }
   console.log(pc.bgGreen(`rename extension ${fromExt.join(",")} to ${toExt}`));
-  fileRename(filePath, { fromExt, toExt });
+  await fileRename(filePath, { fromExt, toExt });
 }
-function fileRename(filePath: string, options: RenameParams) {
+
+async function fileRename(filePath: string, options: RenameParams) {
   let excludeDir = ["node_modules", ".vuepress", ".git"];
   //   console.log(8977)
   //根据文件路径读取文件，返回文件列表
-  fs.readdir(filePath, function (err, files) {
-    if (err) {
-      console.warn(err);
-    } else {
-      //遍历读取到的文件列表
-      files.forEach(function (filename) {
-        //获取当前文件的绝对路径
-        let filedir = path.join(filePath, filename);
-        // console.log("file dir =>", filedir);
-        //根据文件路径获取文件信息，返回一个fs.Stats对象
+  let files = await readdir(filePath);
 
-        fs.stat(filedir, function (eror, stats) {
-          if (eror) {
-            console.warn("获取文件stats失败");
-            throw eror;
-          }
+  //遍历读取到的文件列表
+  for (const filename of files) {
+    //获取当前文件的绝对路径
+    let filedir = path.join(filePath, filename);
+    // console.log("file dir =>", filedir);
+    //根据文件路径获取文件信息，返回一个fs.Stats对象
+    try {
 
-          let isFile = stats.isFile(); //是文件
-          let isDir = stats.isDirectory(); //是文件夹
-          if (isFile) {
-            if (options.fromExt.includes(path.extname(filedir))) {
-              fs.rename(
-                filedir,
-                filedir.replace(path.extname(filedir), options.toExt),
-                (err) => {
-                  if (err) {
-                    throw err;
-                  }
-                  console.log(
-                    `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
-                      path.basename(
-                        filedir.replace(path.extname(filedir), options.toExt)
-                      )
-                    )}`
-                  );
-                }
-              );
-            }
-          }
-          if (isDir) {
-            if (!excludeDir.includes(path.basename(filedir))) {
-              fileRename(filedir, options);
-            } //递归，如果是文件夹，就继续遍历该文件夹下面的文件
-          }
-        });
-      });
+      let stats = await stat(filedir);
+      let isFile = stats.isFile(); //是文件
+      let isDir = stats.isDirectory(); //是文件夹
+      if (isFile) {
+        if (options.fromExt.includes(path.extname(filedir))) {
+         rename(
+           filedir,
+           filedir.replace(path.extname(filedir), options.toExt),
+         ).then(() => {
+           console.log(
+             `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
+               path.basename(
+                 filedir.replace(path.extname(filedir), options.toExt)
+               )
+             )}`
+           );
+         })
+
+        }
+      }
+      if (isDir) {
+        if (!excludeDir.includes(path.basename(filedir))) {
+          await fileRename(filedir, options);
+        } //递归，如果是文件夹，就继续遍历该文件夹下面的文件
+      }
+    } catch (e) {
+      console.warn("获取文件stats失败");
+      throw e;
     }
-  });
+  }
+
+
 }
 
 /**
@@ -121,28 +115,29 @@ function fileRename(filePath: string, options: RenameParams) {
  * @param ext
  * @param dir
  */
-export function deleteFileRecurse(ext: string, dir: string) {
-  const files = fs.readdirSync(dir);
+export async function deleteFileRecurse(ext: string, dir: string) {
+  const files = await readdir(dir);
 
-  files.forEach((item, index) => {
+  for (const item of files) {
+    const index = files.indexOf(item);
     let fullPath = path.join(dir, item);
     console.log(pc.red(fullPath));
-    const stat = fs.statSync(fullPath);
+    const fileStat = await stat(fullPath);
     let ignores = ["res", "vuepress", ".git", "node_modules"];
-    if (stat.isDirectory() && !ignores.includes(item)) {
+    if (fileStat.isDirectory() && !ignores.includes(item)) {
       console.log("删除的路径");
       console.log(`进入文件夹:${path.join(dir, item)}`);
-      deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
+      await deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
     } else {
       if (path.extname(item) == `.${ext}`) {
-        fs.unlinkSync(path.join(dir, item));
+        await unlink(path.join(dir, item));
       }
     }
-  });
+  }
 }
 
-export function deleteByExtension(ext: string, dir: string = "./") {
-  deleteFileRecurse(ext, dir);
+export async function deleteByExtension(ext: string, dir: string = "./") {
+  await deleteFileRecurse(ext, dir);
 }
 
 export function toWebp(img: string, option: WebpInterface) {
@@ -163,11 +158,11 @@ export function toWebp(img: string, option: WebpInterface) {
   console.log(pc.cyan("转换成功!"));
 }
 
-export function transferToWebp(dir: string, option: WebpInterface) {
-  let files = fs.readdirSync(dir);
+export async function transferToWebp(dir: string, option: WebpInterface) {
+  let files = await readdir(dir);
 
   for (let i of files) {
-    if (fs.statSync(i).isFile() && path.extname(i) != ".webp") {
+    if ((await stat(i)).isFile() && path.extname(i) != ".webp") {
       toWebp(i, option);
     }
   }
@@ -200,7 +195,7 @@ async function core(
   // const fs = options.fs || (await import("fs/promises"));
   let fileNum = {
     all: 0,
-    folder: 0,
+    folder: 0
   };
   const fileSizes = new Map();
   const errors: Error[] = [];
@@ -211,16 +206,16 @@ async function core(
     if (options.ignore?.test(itemPath)) return;
 
     const stats = returnType.strict
-      ? fs.lstatSync(itemPath)
-      : fs.lstatSync(itemPath);
+      ? await lstat (itemPath)
+      : await lstat (itemPath);
     if (typeof stats !== "object") return;
     fileSizes.set(stats.ino, stats.size);
 
     if (stats.isDirectory()) {
       ++fileNum.folder;
       const directoryItems = returnType.strict
-        ? fs.readdirSync(itemPath)
-        : fs.readdirSync(itemPath);
+        ?  await readdir(itemPath)
+        :  await readdir(itemPath);
       if (typeof directoryItems !== "object") return;
       await Promise.all(
         directoryItems.map((directoryItem: string) =>
@@ -242,7 +237,7 @@ async function core(
       all: fileNum.all,
       folder: fileNum.folder,
       num: fileNum.all - fileNum.folder,
-      errors: errors.length > 0 ? errors : null,
+      errors: errors.length > 0 ? errors : null
     };
   } else {
     return folderSize;

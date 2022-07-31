@@ -1,4 +1,4 @@
-import { ServeOption } from "../interfaces/Ioption";
+import { ServeOption } from "@/interfaces/Ioption";
 
 import http from "http";
 import boxen from "boxen";

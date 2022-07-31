@@ -8,17 +8,18 @@ import {
   renameToTs,
   toWebp,
   transferToWebp,
-} from "../actions/file";
-import fs from "fs";
+} from "@/actions/file";
+
 import crypto from "crypto";
 import ora from "ora";
 import pc from "picocolors";
 import prettyBytes from "pretty-bytes";
 import * as path from "path";
-import { WebpInterface } from "../interfaces";
-import { RenameOption } from "../interfaces/Ioption";
-import { FilesizeResult } from "../interfaces/actionOpts";
-import { formatDuring } from "../utils/timeUtil";
+import { WebpInterface } from "@/interfaces";
+import { RenameOption } from "@/interfaces/Ioption";
+import { FilesizeResult } from "@/interfaces/actionOpts";
+import { formatDuring } from "@/utils/timeUtil";
+import { readFile } from "fs/promises";
 
 export class FileCommand extends AbstractCommand {
   load(program: Command): void {
@@ -41,14 +42,14 @@ export class FileCommand extends AbstractCommand {
       .option("-f, --from <file>", "输入文件")
       .option("-t, --to <file>", "输出文件")
       .description("转为ts")
-      .action((options: RenameOption) => {
-        renameToTs("./", options);
+      .action(async (options: RenameOption) => {
+        await renameToTs("./", options);
       });
     fileCmd
       .command("md5 <file>")
       .description("获取md5")
-      .action((file) => {
-        const buffer = fs.readFileSync(file);
+      .action(async (file) => {
+        const buffer =await  readFile (file);
         const hash = crypto.createHash("md5");
         // @ts-ignore
         hash.update(buffer, "utf8");
@@ -58,19 +59,19 @@ export class FileCommand extends AbstractCommand {
     fileCmd
       .command("rm <ext> [dirPath]")
       .description("删除文件夹内某类型的文件: ext可以是 js, md, go, ts等等")
-      .action((ext, dirPath) => {
-        deleteByExtension(ext, dirPath);
+      .action(async (ext, dirPath) => {
+        await deleteByExtension(ext, dirPath);
       });
     fileCmd
       .command("webp [img]")
       .description("图片转换为webp")
       .option("-q, --quality")
-      .action((img: string, option: WebpInterface) => {
+      .action( async (img: string, option: WebpInterface) => {
         if (img) {
           toWebp(img, option);
         } else {
           console.log("没有参数");
-          transferToWebp(path.resolve(), option);
+          await transferToWebp(path.resolve(), option);
         }
       });
     fileCmd

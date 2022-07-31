@@ -1,10 +1,9 @@
 import { pipeline } from "node:stream/promises";
-import { createWriteStream } from "node:fs";
+
 import got from "got";
 
 import * as crypto from "crypto";
 import mime from "mime";
-import { customAlphabet } from "nanoid";
 /*
   1、fs.stat 获取文件状态
   2、fs.readdir 读取文件夹数据
@@ -12,17 +11,19 @@ import { customAlphabet } from "nanoid";
   4、path.join 拼路径
 */
 //操作文件
-import * as fs from "fs";
 import pc from "picocolors";
 //操作路径
-import path from "node:path";
-import { DirPath, SingleDirPath } from "../interfaces/mdInterface";
+import * as path from "path";
+import { DirPath, SingleDirPath } from "@/interfaces/mdInterface";
+import { accessSync, createWriteStream, existsSync } from "fs";
+import { readdir, readFile, stat, writeFile,mkdir } from "fs/promises";
+import { cat } from "shelljs";
 
 /**
  * 每个文件夹都生成README.md
  * @param inputPath
  */
-export function genReadme(inputPath: any) {
+export async function genReadme(inputPath: any) {
   //1.接受命令行命令
   //3.判断路径是否存在
   //2.修正路径
@@ -40,14 +41,14 @@ export function genReadme(inputPath: any) {
     //也可以这样写 ：判断是否存在，以及是否可读
     //fs.accessSync(inputPath,fs.constants.F_OK|fs.constants.R_OK);
     //这里的 fs.constants.F_OK 是默认值，不用写
-    fs.accessSync(inputPath);
-    genReadmeFiles(inputPath);
+    accessSync(inputPath);
+    await genReadmeFiles(inputPath);
   } catch (err) {
     console.log(err);
   }
 
-  function genReadmeFiles(filePath: string) {
-    let state = fs.statSync(filePath);
+  async function genReadmeFiles(filePath: string) {
+    let state = await stat(filePath);
     if (state.isFile()) {
       //是文件
       // console.log(filePath);
@@ -55,22 +56,22 @@ export function genReadme(inputPath: any) {
       //是文件夹
       //先读取
 
-      if (fs.existsSync(path.resolve(filePath, "README.md"))) {
+      if (existsSync(path.resolve(filePath, "README.md"))) {
         console.log(`${filePath}已经有readme了`);
       } else {
         let fileName = "README.md";
         let content = "# " + filePath.split("\\").pop();
-        fs.writeFileSync(
+        await writeFile(
           path.join(filePath, fileName),
           `\n---\nindex: false\n---\n` + content
         );
       }
-      let files = fs.readdirSync(filePath);
-      files.forEach((file) => {
+      let files = await readdir(filePath);
+      for (const file of files) {
         //   console.log(path.join(filePath, file) + "，file");
 
-        genReadmeFiles(path.join(filePath, file));
-      });
+        await genReadmeFiles(path.join(filePath, file));
+      }
     }
   }
 }
@@ -79,40 +80,42 @@ export function genReadme(inputPath: any) {
  * 遍历所有文件夹生成目录readme
  * @param inputPath
  */
-export function genRecurseReadme(inputPath: string) {
-  function readFileList(dir: string, filesList: SingleDirPath[] = []) {
-    const files = fs.readdirSync(dir);
+export async function genRecurseReadme(inputPath: string) {
+  async function readFileList(dir: string, filesList: SingleDirPath[] = []) {
+    const files = await readdir(dir);
     let dirPath: SingleDirPath = {
       name: path.resolve(dir).split("\\").pop(),
-      files: [],
+      files: []
     };
-    files.forEach((item, index) => {
+    for (const item of files) {
+      const index = files.indexOf(item);
       let fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
+      const fileStat = await stat(fullPath);
 
-      if (stat.isDirectory() && item != "res" && item != ".vuepress") {
+      if (fileStat.isDirectory() && item != "res" && item != ".vuepress") {
         console.log(path.join(dir, item));
         console.log("files=", filesList);
-        readFileList(path.join(dir, item), filesList); //递归读取文件
+        await readFileList(path.join(dir, item), filesList); //递归读取文件
       } else {
         if (path.extname(item) == ".md") {
           dirPath.files.push(fullPath.split(path.sep).join("/"));
         }
         // filesList.push(fullPath.replace("\\", "/"));
       }
-    });
+    }
     filesList.push(dirPath);
     return filesList;
   }
+
   let filesList: SingleDirPath[] = [];
-  readFileList(inputPath, filesList);
+  await readFileList(inputPath, filesList);
   console.log("filelist=", filesList);
   let md = "";
   let head = path.resolve().split("\\").pop();
   for (let link of filesList) {
     md += `\n## ${link.name}\n\n`;
     for (let file of link.files) {
-      let data = fs.readFileSync(file);
+      let data = await readFile(file);
       let pattern = /# [\S]{0,20}/;
       if (pattern.test(data.toString())) {
         md += `- [${data.toString().match(pattern)![0].slice(2)}](./${file})\n`;
@@ -123,55 +126,58 @@ export function genRecurseReadme(inputPath: string) {
   let fileName = "README.md";
   let finalMd = `# ${head}\n` + md;
   try {
-    fs.writeFileSync(fileName, finalMd);
+    await writeFile(fileName, finalMd);
     //文件写入成功。
     console.log(`${fileName}创建成功`);
   } catch (err) {
     console.error(err);
   }
 }
-export function genSingleReadme(inputPath: any) {
-  function readFileList(dir: string, filesList: DirPath[] = []) {
-    const files = fs.readdirSync(dir);
+
+export async function genSingleReadme(inputPath: any) {
+  async function readFileList(dir: string, filesList: DirPath[] = []) {
+    const files = await readdir(dir);
     let dirPath: DirPath = {
       name: path.resolve().split("\\").pop(),
-      files: [],
+      files: []
     };
-    files.forEach((item, index) => {
+    for (const item of files) {
+      const index = files.indexOf(item);
       let fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
+      const fileStat = await stat(fullPath);
       // console.log(path.extname(item));
       // console.log(fullPath);
       if (
-        stat.isDirectory() ||
+        fileStat.isDirectory() ||
         path.extname(item).toLowerCase() != ".md" ||
         item.toLowerCase() == "readme.md"
       ) {
         //   console.log("not markdown", item.toString());
       } else {
-        let data = fs.readFileSync(fullPath);
+        let data = await readFile(fullPath);
         let pattern = /# \S{0,20}/;
         if (pattern.test(data.toString())) {
           dirPath.files.push({
             content: data.toString().match(pattern)![0].slice(2),
-            filename: fullPath.replace("\\", "/"),
+            filename: fullPath.replace("\\", "/")
           });
         } else {
           console.log(fullPath);
           dirPath.files.push({
             content: fullPath.split(".")[0],
-            filename: fullPath.replace("\\", "/"),
+            filename: fullPath.replace("\\", "/")
           });
         }
 
         // filesList.push(fullPath.replace("\\", "/"));
       }
-    });
+    }
     filesList.push(dirPath);
     return filesList;
   }
+
   let filesList: DirPath[] = [];
-  readFileList(inputPath, filesList);
+  await readFileList(inputPath, filesList);
 
   let mdContent = "";
   for (let link of filesList) {
@@ -184,43 +190,48 @@ export function genSingleReadme(inputPath: any) {
   console.log(mdContent);
   let fileName = "README.md";
   try {
-    fs.writeFileSync(fileName, mdContent);
+    await writeFile(fileName, mdContent);
     //文件写入成功。
     console.log(`${fileName}创建成功`);
   } catch (err) {
     console.error(err);
   }
 }
-export function getAllMarkdowns(inputPath: any) {
-  function readFileList(dir: string, filesList: string[] = []) {
-    const files = fs.readdirSync(dir);
+
+export async function getAllMarkdowns(inputPath: any) {
+  async function readFileList(dir: string, filesList: string[] = []) {
+    const files = await readdir(dir);
     let dirPath = { name: path.resolve().split("\\").pop(), files: [] };
-    files.forEach((item, index) => {
+    for (const item of files) {
+      const index = files.indexOf(item);
       let fullPath = path.join(dir, item);
-      const stat = fs.statSync(fullPath);
-      if (stat.isDirectory() || path.extname(item).toLowerCase() != ".md") {
+      const fileStat = await stat(fullPath);
+      if (fileStat.isDirectory() || path.extname(item).toLowerCase() != ".md") {
         //   console.log("not markdown", item.toString());
       } else {
         filesList.push(fullPath.replace("\\", "/"));
       }
-    });
+    }
     // filesList.push(dirPath);
     return filesList;
   }
+
   let filesList: string[] = [];
-  readFileList(inputPath, filesList);
+  await readFileList(inputPath, filesList);
   console.log(filesList);
-  fs.writeFile(
+
+
+  writeFile(
     "filelist.txt",
     filesList.join(`\n`),
-    { encoding: "utf-8" },
-    (err: any) => {
-      if (err) {
-      } else {
-        console.log("success");
-      }
-    }
-  );
+    { encoding: "utf-8" }
+  ).then(() => {
+    console.log("success");
+  }).catch((e) => {
+    console.log(e);
+  });
+
+
 }
 
 /**
@@ -230,7 +241,7 @@ export function getAllMarkdowns(inputPath: any) {
 export async function genMarkdownImgs(file: string) {
   let beforeName = path.resolve(process.cwd(), file);
   let backupFile = `${path.basename(beforeName, ".md")}.bak.md`;
-  let data = fs.readFileSync(beforeName);
+  let data = await readFile (beforeName);
   let reg = new RegExp(/!\[.*\]\(.+\)/, "gi");
   let imgFolder = "img";
   let imgs: string[] = data.toString().match(reg) ?? [];
@@ -238,11 +249,12 @@ export async function genMarkdownImgs(file: string) {
     let uri = replacerMdTagToUrl(item);
     console.log("图片url=>", pc.cyan(`${uri}`));
     let fileId = replacerFileName(item);
-    if (!fs.existsSync(imgFolder)) {
-      fs.mkdirSync(imgFolder);
+    if (! existsSync(imgFolder)) {
+    await  mkdir (imgFolder);
     }
     await downloadImage(uri, imgFolder, fileId);
   }
+
   function replacerMdTagToUrl(urlString: string) {
     let reg = new RegExp(/\((.+)\)/, "g");
     let pureUrl = reg.exec(urlString)![0];
@@ -252,6 +264,7 @@ export async function genMarkdownImgs(file: string) {
     }
     return httpStr;
   }
+
   /**
    * 生成如下的格式(1624847415629-4a7a5f1e-7644-4370-9ed7-e1f83ce4873f.png)
    * @param {s} fileName
@@ -266,6 +279,7 @@ export async function genMarkdownImgs(file: string) {
 
     return finalName;
   }
+
   /**
    * 下载文件
    * @param url 下载图片地址
@@ -300,13 +314,15 @@ export async function genMarkdownImgs(file: string) {
           readStream,
           createWriteStream(path.join(folder, fileName))
         );
+
         //写入文件
         function replacerMd(match: string) {
           return `![${replacerFileName(match)}](./${imgFolder}/${fileName})`;
         }
+
         let arr = data.toString().replaceAll(reg, replacerMd);
-        fs.writeFileSync(backupFile, data.toString());
-        fs.writeFileSync(beforeName, arr);
+        await writeFile(backupFile, data.toString());
+       await writeFile(beforeName, arr);
       } catch (error) {
         onError(error);
       }

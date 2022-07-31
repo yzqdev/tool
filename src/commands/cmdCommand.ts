@@ -5,7 +5,7 @@ import {
   npmActions,
   pnpmCommands,
   yarnActions,
-} from "../actions/cmds";
+} from "@/actions/cmds";
 
 export class CmdCommand extends AbstractCommand {
   load(program: Command): void {

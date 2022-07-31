@@ -1,7 +1,7 @@
 import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
 import pc from "picocolors";
-import { getToolrc } from "../utils/getToolrc";
+import { getToolrc } from "@/utils/getToolrc";
 export class TestCommand extends AbstractCommand {
   load(program: Command): void {
     let test = program

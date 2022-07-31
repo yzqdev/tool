@@ -3,6 +3,7 @@ import shell from "shelljs";
 import pc from "picocolors";
 import inquirer from "inquirer";
 import * as fs from "fs";
+import { writeFile } from "fs/promises";
 import { fixUrl, isWin, npmrc } from "../utils/npmrc";
 import { EnvPrompt } from "../interfaces/npmInterface";
 import { ToolConfig } from "../toolConfig";
@@ -44,14 +45,15 @@ export async function setAllReg() {
   if (result.node) {
     if (!fs.existsSync(npmrcPath)) {
       console.log(pc.cyan("未找到.npmrc文件,正在创建"));
-      fs.writeFile(npmrcPath, "", (err) => {
-        if (err) {
-          console.log(err);
-        } else {
-          console.log(pc.cyan("已经创建完毕"));
-          setNodeEnv();
-        }
-      });
+
+      try {
+        await writeFile(npmrcPath, "");
+
+        console.log(pc.cyan("已经创建完毕"));
+        setNodeEnv();
+      } catch (e) {
+        console.log(e);
+      }
     } else {
       setNodeEnv();
     }
