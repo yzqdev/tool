@@ -1,4 +1,4 @@
-import { IConfig } from "../interfaces";
+import { IConfig } from "@/interfaces";
 
 export const questions = [
   { name: "node", type: "confirm", message: "设置node镜像?" },

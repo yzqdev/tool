@@ -4,10 +4,24 @@ import shell from "shelljs";
 import { WebpInterface } from "@/interfaces";
 import { RenameOption, RenameParams } from "@/interfaces/Ioption";
 import { FilesizeOpts } from "@/interfaces/actionOpts";
-import { join } from "path";
+import { basename, extname, join } from "path";
 
 import { lstat, readdir, rename, stat, unlink, writeFile } from "fs/promises";
-
+export async function genCodeDemo(dir:string ) {
+  console.log(pc.cyan(`路径是:${dir}`));
+  let files= await readdir('.')
+  let arr=[]
+  let exts=['.ts','.js']
+  for (const item of files) {
+    
+    if (exts.includes(extname(item))) {
+      arr.push(`@[code](${dir}/${item})\n`);
+    }
+    
+  }
+   
+  await writeFile('code.txt',arr.join(''))
+}
 export async function genTxt(dir: string) {
   let files = await readdir(dir);
 
@@ -58,7 +72,7 @@ export async function renameToTs(dir: string, options: RenameOption) {
       return;
     }
   }
-  console.log(pc.bgGreen(`rename extension ${fromExt.join(",")} to ${toExt}`));
+  console.log(pc.red(`rename extension ${fromExt.join(",")} to ${toExt}`));
   await fileRename(filePath, { fromExt, toExt });
 }
 
@@ -121,16 +135,17 @@ export async function deleteFileRecurse(ext: string, dir: string) {
   for (const item of files) {
     const index = files.indexOf(item);
     let fullPath = path.join(dir, item);
-    console.log(pc.red(fullPath));
+    // console.log(pc.red(fullPath));
     const fileStat = await stat(fullPath);
-    let ignores = ["res", "vuepress", ".git", "node_modules"];
+    let ignores = ["img", "vuepress", ".git", "node_modules"];
     if (fileStat.isDirectory() && !ignores.includes(item)) {
-      console.log("删除的路径");
-      console.log(`进入文件夹:${path.join(dir, item)}`);
+      
+      // console.log(`进入文件夹:${path.join(dir, item)}`);
       await deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
     } else {
-      if (path.extname(item) == `.${ext}`) {
+      if (path.extname(item) == `${ext}`) {
         await unlink(path.join(dir, item));
+        console.log(pc.red(`删除的路径=> ${path.join(dir, item)}`));
       }
     }
   }

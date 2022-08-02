@@ -2,6 +2,7 @@ import { AbstractCommand } from "./abstractCommand";
 import { Command } from "commander";
 import {
   deleteByExtension,
+  genCodeDemo,
   genName,
   genTxt,
   getFolderSize,
@@ -20,11 +21,23 @@ import { RenameOption } from "@/interfaces/Ioption";
 import { FilesizeResult } from "@/interfaces/actionOpts";
 import { formatDuring } from "@/utils/timeUtil";
 import { readFile } from "fs/promises";
-
+interface CodeOption{
+  path:string
+}
 export class FileCommand extends AbstractCommand {
   load(program: Command): void {
     let fileCmd = program.command("file").description("一些文件操作");
-
+    fileCmd
+      .command("code").option('-p, --path [path]','路径,例子: ./res')
+      .description("生成代码引用")
+      .action((cmd:CodeOption) => {
+        if (cmd.path) {
+          genCodeDemo(cmd.path);
+        }
+      else{
+        genCodeDemo('.')
+      }
+      });
     fileCmd
       .command("txt")
       .description("生成文本文件")
@@ -42,14 +55,14 @@ export class FileCommand extends AbstractCommand {
       .option("-f, --from <file>", "输入文件")
       .option("-t, --to <file>", "输出文件")
       .description("转为ts")
-      .action(async (options: RenameOption) => {
-        await renameToTs("./", options);
+      .action((options: RenameOption) => {
+        renameToTs("./", options);
       });
     fileCmd
       .command("md5 <file>")
       .description("获取md5")
       .action(async (file) => {
-        const buffer =await  readFile (file);
+        const buffer = await readFile(file);
         const hash = crypto.createHash("md5");
         // @ts-ignore
         hash.update(buffer, "utf8");
@@ -58,20 +71,20 @@ export class FileCommand extends AbstractCommand {
       });
     fileCmd
       .command("rm <ext> [dirPath]")
-      .description("删除文件夹内某类型的文件: ext可以是 js, md, go, ts等等")
-      .action(async (ext, dirPath) => {
-        await deleteByExtension(ext, dirPath);
+      .description("删除文件夹内某类型的文件: ext可以是 .js, .md, .go, .ts等等")
+      .action((ext, dirPath) => {
+        deleteByExtension(ext, dirPath);
       });
     fileCmd
       .command("webp [img]")
       .description("图片转换为webp")
       .option("-q, --quality")
-      .action( async (img: string, option: WebpInterface) => {
+      .action((img: string, option: WebpInterface) => {
         if (img) {
           toWebp(img, option);
         } else {
           console.log("没有参数");
-          await transferToWebp(path.resolve(), option);
+          transferToWebp(path.resolve(), option);
         }
       });
     fileCmd

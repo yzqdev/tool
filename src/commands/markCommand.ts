@@ -6,9 +6,9 @@ import {
   genRecurseReadme,
   genSingleReadme,
   getAllMarkdowns,
-} from "../actions/md";
+} from "@/actions/md";
 
-import * as path from "path";
+import   path from "node:path";
 
 import inquirer from "inquirer";
 

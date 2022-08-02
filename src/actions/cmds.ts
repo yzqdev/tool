@@ -1,5 +1,5 @@
 import Table from "cli-table3";
-import { flutterCmd, pnpmCmd, yarnCmd } from "../constants/strs";
+import { flutterCmd, pnpmCmd, yarnCmd } from "@/constants/strs";
 export function yarnActions() {
   let table = new Table({ head: ["命令", "说明"] });
   table.push(...yarnCmd);
