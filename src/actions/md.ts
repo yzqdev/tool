@@ -2,21 +2,15 @@ import { pipeline } from "node:stream/promises";
 
 import got from "got";
 
-import * as crypto from "crypto";
+import crypto from "crypto";
 import mime from "mime";
-/*
-  1、fs.stat 获取文件状态
-  2、fs.readdir 读取文件夹数据
-  3、fs.access 判断文件夹是否存在
-  4、path.join 拼路径
-*/
-//操作文件
+
 import pc from "picocolors";
 //操作路径
-import * as path from "path";
+import path from "path";
 import { DirPath, SingleDirPath } from "@/interfaces/mdInterface";
 import { accessSync, createWriteStream, existsSync } from "fs";
-import { readdir, readFile, stat, writeFile,mkdir } from "fs/promises";
+import { readdir, readFile, stat, writeFile, mkdir } from "fs/promises";
 import { cat } from "shelljs";
 
 /**
@@ -85,7 +79,7 @@ export async function genRecurseReadme(inputPath: string) {
     const files = await readdir(dir);
     let dirPath: SingleDirPath = {
       name: path.resolve(dir).split("\\").pop(),
-      files: []
+      files: [],
     };
     for (const item of files) {
       const index = files.indexOf(item);
@@ -139,7 +133,7 @@ export async function genSingleReadme(inputPath: any) {
     const files = await readdir(dir);
     let dirPath: DirPath = {
       name: path.resolve().split("\\").pop(),
-      files: []
+      files: [],
     };
     for (const item of files) {
       const index = files.indexOf(item);
@@ -159,13 +153,13 @@ export async function genSingleReadme(inputPath: any) {
         if (pattern.test(data.toString())) {
           dirPath.files.push({
             content: data.toString().match(pattern)![0].slice(2),
-            filename: fullPath.replace("\\", "/")
+            filename: fullPath.replace("\\", "/"),
           });
         } else {
           console.log(fullPath);
           dirPath.files.push({
             content: fullPath.split(".")[0],
-            filename: fullPath.replace("\\", "/")
+            filename: fullPath.replace("\\", "/"),
           });
         }
 
@@ -220,18 +214,13 @@ export async function getAllMarkdowns(inputPath: any) {
   await readFileList(inputPath, filesList);
   console.log(filesList);
 
-
-  writeFile(
-    "filelist.txt",
-    filesList.join(`\n`),
-    { encoding: "utf-8" }
-  ).then(() => {
-    console.log("success");
-  }).catch((e) => {
-    console.log(e);
-  });
-
-
+  writeFile("filelist.txt", filesList.join(`\n`), { encoding: "utf-8" })
+    .then(() => {
+      console.log("success");
+    })
+    .catch((e) => {
+      console.log(e);
+    });
 }
 
 /**
@@ -241,20 +230,33 @@ export async function getAllMarkdowns(inputPath: any) {
 export async function genMarkdownImgs(file: string) {
   let beforeName = path.resolve(process.cwd(), file);
   let backupFile = `${path.basename(beforeName, ".md")}.bak.md`;
-  let data = await readFile (beforeName);
+  let dataString = (await readFile(beforeName)).toString();
+  let fileStr = {
+    beforeContent: dataString,
+    afterContent: dataString,
+  };
   let reg = new RegExp(/!\[.*\]\(.+\)/, "gi");
   let imgFolder = "img";
-  let imgs: string[] = data.toString().match(reg) ?? [];
+
+  let imgs: string[] = dataString.match(reg) ?? [];
+  if (!existsSync(imgFolder)) {
+    await mkdir(imgFolder);
+  }
   for (let item of imgs) {
+    //![img](http://wwww.exmple.com/a.jpg)转http://wwww.exmple.com/a.jpg
     let uri = replacerMdTagToUrl(item);
     console.log("图片url=>", pc.cyan(`${uri}`));
+    //链接转md5
     let fileId = replacerFileName(item);
-    if (! existsSync(imgFolder)) {
-    await  mkdir (imgFolder);
-    }
-    await downloadImage(uri, imgFolder, fileId);
-  }
 
+    let arr = await downloadImage(uri, imgFolder, fileId);
+    console.log(pc.red(`${item}=>${arr}`));
+   fileStr.afterContent= fileStr.afterContent.replace(item, arr);
+
+  }
+  
+  await writeFile(backupFile, fileStr.beforeContent);
+  await writeFile(beforeName, fileStr.afterContent);
   function replacerMdTagToUrl(urlString: string) {
     let reg = new RegExp(/\((.+)\)/, "g");
     let pureUrl = reg.exec(urlString)![0];
@@ -271,12 +273,7 @@ export async function genMarkdownImgs(file: string) {
    * @returns
    */
   function replacerFileName(fileName: string) {
-    // let extReg = new RegExp(/\d*-.*\.(png|jpg|gif|webp|awebp)/, "gi");
-    // let spited = fileName.split("/");
-    // let finalName = spited[spited.length - 1].substring(0, spited[spited.length - 1].length - 1);
-    // console.log(pc.magenta(`最后的文件名:${finalName}`));
     let finalName = crypto.createHash("md5").update(fileName).digest("hex");
-
     return finalName;
   }
 
@@ -286,48 +283,26 @@ export async function genMarkdownImgs(file: string) {
    * @param folder 文件地址
    * @param fileId
    */
-  async function downloadImage(url: string, folder: string, fileId: string) {
+  async function downloadImage(
+    url: string,
+    folder: string,
+    fileId: string
+  ): Promise<string> {
+    let finalMd = ''
     if (!url.includes("http")) {
       url = "https://" + url;
     }
-    const readStream = got.stream(url);
-
     const onError = (error: any) => {
       console.log(pc.red(error));
       // Do something with it.
     };
 
-    readStream.on("response", async (response) => {
-      if (response.headers.age > 3600) {
-        console.log("Failure - response too old");
-        readStream.destroy(); // Destroy the stream to prevent hanging resources.
-        return;
-      }
+    const req = got(url, { encoding: "binary" });
+    let contentType = (await req).headers["content-type"]!;
+    let fileName = fileId + "." + mime.getExtension(contentType);
 
-      readStream.off("error", onError);
-
-      try {
-        let contentType = response.headers["content-type"];
-        let fileName = fileId + "." + mime.getExtension(contentType);
-
-        await pipeline(
-          readStream,
-          createWriteStream(path.join(folder, fileName))
-        );
-
-        //写入文件
-        function replacerMd(match: string) {
-          return `![${replacerFileName(match)}](./${imgFolder}/${fileName})`;
-        }
-
-        let arr = data.toString().replaceAll(reg, replacerMd);
-        await writeFile(backupFile, data.toString());
-       await writeFile(beforeName, arr);
-      } catch (error) {
-        onError(error);
-      }
-    });
-
-    readStream.once("error", onError);
+    finalMd  = `![${replacerFileName(url)}](./${imgFolder}/${fileName})`;
+    await writeFile(path.join(folder, fileName), await req.buffer());
+    return finalMd ;
   }
 }
