@@ -6,7 +6,33 @@ import { RenameOption, RenameParams } from "@/interfaces/Ioption";
 import { FilesizeOpts } from "@/interfaces/actionOpts";
 import { basename, extname, join } from "path";
 
-import { lstat, readdir, rename, stat, unlink, writeFile } from "fs/promises";
+import { lstat, readdir, readFile, rename, stat, unlink, writeFile } from "fs/promises";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+
+export async function getSimpleMd5(file:string){
+    const buffer = await readFile(file);
+    const hash =  createHash("md5");
+    // @ts-ignore
+    hash.update(buffer, "utf8");
+    const md5 = hash.digest("hex");
+    console.log(pc.cyan(md5));
+}
+export async function getLargeMd5(file:string){
+  let start=performance.now()
+  const stream = createReadStream(file);
+  const hash =  createHash("md5");
+  stream.on("data", (chunk:any) => {
+    hash.update(chunk, "utf8");
+  });
+  stream.on("end", () => {
+    const md5 = hash.digest("hex");
+    console.log(md5);
+    let end = performance.now();
+    console.log(`用时${(end - start)/1000}s`);
+  });
+  
+}
 export async function genCodeDemo(dir:string ) {
   console.log(pc.cyan(`路径是:${dir}`));
   let files= await readdir('.')

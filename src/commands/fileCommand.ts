@@ -6,6 +6,7 @@ import {
   genName,
   genTxt,
   getFolderSize,
+  getLargeMd5,
   renameToTs,
   toWebp,
   transferToWebp,
@@ -62,12 +63,7 @@ export class FileCommand extends AbstractCommand {
       .command("md5 <file>")
       .description("获取md5")
       .action(async (file) => {
-        const buffer = await readFile(file);
-        const hash = crypto.createHash("md5");
-        // @ts-ignore
-        hash.update(buffer, "utf8");
-        const md5 = hash.digest("hex");
-        console.log(pc.cyan(md5));
+      getLargeMd5(file)
       });
     fileCmd
       .command("rm <ext> [dirPath]")
