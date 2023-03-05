@@ -63,6 +63,7 @@ export class FileCommand extends AbstractCommand {
       .command("md5 <file>")
       .description("获取md5")
       .action(async (file) => {
+        console.log('计算文件md5');
       getLargeMd5(file)
       });
     fileCmd

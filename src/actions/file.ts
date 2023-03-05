@@ -29,7 +29,7 @@ export async function getLargeMd5(file:string){
     const md5 = hash.digest("hex");
     console.log(md5);
     let end = performance.now();
-    console.log(`用时${(end - start)/1000}s`);
+    console.log(`用时:${(end - start)/1000}s`);
   });
   
 }
