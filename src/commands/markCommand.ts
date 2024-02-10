@@ -8,7 +8,7 @@ import {
   getAllMarkdowns,
 } from "@/actions/md";
 
-import   path from "node:path";
+import path from "node:path";
 
 import inquirer from "inquirer";
 

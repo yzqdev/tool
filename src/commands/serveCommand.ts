@@ -12,7 +12,7 @@ export class ServeCommand implements AbstractCommand {
       .option("-d, --dir <dir>", "例子:tool serve -d /atools")
       .action(async (opt: ServeOption) => {
         console.log(opt);
-          expServer(opt);
+        expServer(opt);
       });
   }
 }

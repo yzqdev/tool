@@ -9,8 +9,8 @@ import pc from "picocolors";
 //操作路径
 import path from "path";
 import { DirPath, SingleDirPath } from "@/interfaces/mdInterface";
-import { accessSync, createWriteStream, existsSync } from "fs";
-import { readdir, readFile, stat, writeFile, mkdir } from "fs/promises";
+import { accessSync, createWriteStream, existsSync } from "node:fs";
+import { readdir, readFile, stat, writeFile, mkdir } from "node:fs/promises";
 import { cat } from "shelljs";
 
 /**
@@ -57,7 +57,7 @@ export async function genReadme(inputPath: any) {
         let content = "# " + filePath.split("\\").pop();
         await writeFile(
           path.join(filePath, fileName),
-          `\n---\nindex: false\n---\n` + content
+          `\n---\nindex: false\n---\n` + content,
         );
       }
       let files = await readdir(filePath);
@@ -251,10 +251,9 @@ export async function genMarkdownImgs(file: string) {
 
     let arr = await downloadImage(uri, imgFolder, fileId);
     console.log(pc.red(`${item}=>${arr}`));
-   fileStr.afterContent= fileStr.afterContent.replace(item, arr);
-
+    fileStr.afterContent = fileStr.afterContent.replace(item, arr);
   }
-  
+
   await writeFile(backupFile, fileStr.beforeContent);
   await writeFile(beforeName, fileStr.afterContent);
   function replacerMdTagToUrl(urlString: string) {
@@ -286,9 +285,9 @@ export async function genMarkdownImgs(file: string) {
   async function downloadImage(
     url: string,
     folder: string,
-    fileId: string
+    fileId: string,
   ): Promise<string> {
-    let finalMd = ''
+    let finalMd = "";
     if (!url.includes("http")) {
       url = "https://" + url;
     }
@@ -301,8 +300,8 @@ export async function genMarkdownImgs(file: string) {
     let contentType = (await req).headers["content-type"]!;
     let fileName = fileId + "." + mime.getExtension(contentType);
 
-    finalMd  = `![${replacerFileName(url)}](./${imgFolder}/${fileName})`;
+    finalMd = `![${replacerFileName(url)}](./${imgFolder}/${fileName})`;
     await writeFile(path.join(folder, fileName), await req.buffer());
-    return finalMd ;
+    return finalMd;
   }
 }

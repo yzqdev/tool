@@ -78,7 +78,7 @@ export function fixUrl(obj: any) {
       if (typeof obj[key] === "string") {
         obj[key] = obj[key].replace(
           /\{(\w+)-mirrors}/g,
-          (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s
+          (s: string, prefix: string) => opts[prefix + "MirrorsPrefix"] || s,
         );
       }
     }

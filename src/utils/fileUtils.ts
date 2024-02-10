@@ -4,9 +4,9 @@ import {
   mkdirSync,
   readdirSync,
   statSync,
-} from "fs";
-import { dirname, resolve } from "path";
-import { fileURLToPath } from "url";
+} from "node:fs";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 
 /**
  * 获取vendor文件的路径
@@ -18,7 +18,7 @@ export function vendorFile(name: string, folder: string): string {
   const templateDir = resolve(
     dirname(fileURLToPath(import.meta.url)),
     "../vendor/" + folder,
-    name
+    name,
   );
   return templateDir;
 }

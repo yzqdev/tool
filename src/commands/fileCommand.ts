@@ -22,22 +22,22 @@ import { RenameOption } from "@/interfaces/Ioption";
 import { FilesizeResult } from "@/interfaces/actionOpts";
 import { formatDuring } from "@/utils/timeUtil";
 import { readFile } from "fs/promises";
-interface CodeOption{
-  path:string
+interface CodeOption {
+  path: string;
 }
 export class FileCommand extends AbstractCommand {
   load(program: Command): void {
     let fileCmd = program.command("file").description("一些文件操作");
     fileCmd
-      .command("code").option('-p, --path [path]','路径,例子: ./res')
+      .command("code")
+      .option("-p, --path [path]", "路径,例子: ./res")
       .description("生成代码引用")
-      .action((cmd:CodeOption) => {
+      .action((cmd: CodeOption) => {
         if (cmd.path) {
           genCodeDemo(cmd.path);
+        } else {
+          genCodeDemo(".");
         }
-      else{
-        genCodeDemo('.')
-      }
       });
     fileCmd
       .command("txt")
@@ -56,15 +56,22 @@ export class FileCommand extends AbstractCommand {
       .option("-f, --from <file>", "输入文件")
       .option("-t, --to <file>", "输出文件")
       .description("转为ts")
-      .action((options: RenameOption) => {
-        renameToTs("./", options);
+      .action(async (options: RenameOption) => {
+        let start = performance.now();
+        const spinner = ora({
+          discardStdin: false,
+          text: pc.cyan(`重命名中\n`),
+        }).start();
+        await renameToTs("./", options);
+        let end = performance.now();
+        spinner.succeed("重命名完毕,用时" + formatDuring(end - start));
       });
     fileCmd
       .command("md5 <file>")
       .description("获取md5")
       .action(async (file) => {
-        console.log('计算文件md5');
-      getLargeMd5(file)
+        console.log("计算文件md5");
+        getLargeMd5(file);
       });
     fileCmd
       .command("rm <ext> [dirPath]")
@@ -105,7 +112,7 @@ export class FileCommand extends AbstractCommand {
         }
         console.log(
           pc.cyan(`文件夹的大小是:`),
-          prettyBytes(res.size, { locale: "zh" })
+          prettyBytes(res.size, { locale: "zh" }),
         );
         console.log(pc.cyan(`文件数量:`), pc.green(`${res.all - res.folder}`));
         console.log(pc.cyan(`文件夹数量:`), pc.green(`${res.folder}`));

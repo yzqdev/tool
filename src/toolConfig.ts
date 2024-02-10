@@ -1,5 +1,5 @@
-import * as fs from "fs";
-import * as path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import pc from "picocolors";
 import { IConfig } from "./interfaces";
 import { confPath, npmrcPath } from "./constants/dirs";

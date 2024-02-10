@@ -1,13 +1,13 @@
 import { ServeOption } from "@/interfaces/Ioption";
 
-import http from "http";
+import http from "node:http";
 import boxen from "boxen";
 import pc from "picocolors";
-import { AddressInfo } from "net";
-import * as os from "os";
+import { AddressInfo } from "node:net";
+import os from "node:os";
 import express from "express";
 import serveIndex from "serve-index";
-import * as path from "path";
+import path from "node:path";
 export async function expServer(option: ServeOption) {
   let port = option.port ?? 3000;
   const app = express();
@@ -17,7 +17,7 @@ export async function expServer(option: ServeOption) {
   app.use(
     dir,
     express.static(path.resolve()),
-    serveIndex(path.resolve(), { icons: true })
+    serveIndex(path.resolve(), { icons: true }),
   );
 
   app.listen(port, () => {
@@ -43,7 +43,7 @@ export async function expServer(option: ServeOption) {
         padding: 1,
         borderColor: "green",
         margin: 1,
-      })
+      }),
     );
   });
 }

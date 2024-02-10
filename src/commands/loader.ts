@@ -27,7 +27,7 @@ export class CommandLoader {
     program.on("command:*", () => {
       console.error(
         `\n Invalid command: ${pc.red("%s")}`,
-        program.args.join(" ")
+        program.args.join(" "),
       );
       console.log(`输入${pc.red("--help")}查看命令  \n`);
       process.exit(1);

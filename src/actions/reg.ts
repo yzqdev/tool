@@ -2,7 +2,7 @@ import regedit, { RegistryItemPutCollection } from "regedit";
 import shell from "shelljs";
 import pc from "picocolors";
 import inquirer from "inquirer";
-import * as fs from "fs";
+import fs from "node:fs";
 import { writeFile } from "fs/promises";
 import { fixUrl, isWin, npmrc } from "../utils/npmrc";
 import { EnvPrompt } from "../interfaces/npmInterface";
@@ -83,7 +83,7 @@ export function setPythonEnv() {
     shell.exit(1);
   }
   shell.exec(
-    `pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`
+    `pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple`,
   );
   shell.exec(`pip config set install.trusted-host pypi.tuna.tsinghua.edu.cn`);
   console.log(pc.cyan("设置成功"));

@@ -1,52 +1,57 @@
-import * as path from "path";
+import path from "node:path";
 import pc from "picocolors";
 import shell from "shelljs";
 import { WebpInterface } from "@/interfaces";
 import { RenameOption, RenameParams } from "@/interfaces/Ioption";
 import { FilesizeOpts } from "@/interfaces/actionOpts";
-import { basename, extname, join } from "path";
+import { basename, extname, join } from "node:path";
 
-import { lstat, readdir, readFile, rename, stat, unlink, writeFile } from "fs/promises";
+import {
+  lstat,
+  readdir,
+  readFile,
+  rename,
+  stat,
+  unlink,
+  writeFile,
+} from "fs/promises";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
 
-export async function getSimpleMd5(file:string){
-    const buffer = await readFile(file);
-    const hash =  createHash("md5");
-    // @ts-ignore
-    hash.update(buffer, "utf8");
-    const md5 = hash.digest("hex");
-    console.log(pc.cyan(md5));
+export async function getSimpleMd5(file: string) {
+  const buffer = await readFile(file);
+  const hash = createHash("md5");
+  // @ts-ignore
+  hash.update(buffer, "utf8");
+  const md5 = hash.digest("hex");
+  console.log(pc.cyan(md5));
 }
-export async function getLargeMd5(file:string){
-  let start=performance.now()
+export async function getLargeMd5(file: string) {
+  let start = performance.now();
   const stream = createReadStream(file);
-  const hash =  createHash("md5");
-  stream.on("data", (chunk:any) => {
+  const hash = createHash("md5");
+  stream.on("data", (chunk: any) => {
     hash.update(chunk, "utf8");
   });
   stream.on("end", () => {
     const md5 = hash.digest("hex");
     console.log(md5);
     let end = performance.now();
-    console.log(`用时:${(end - start)/1000}s`);
+    console.log(`用时:${(end - start) / 1000}s`);
   });
-  
 }
-export async function genCodeDemo(dir:string ) {
+export async function genCodeDemo(dir: string) {
   console.log(pc.cyan(`路径是:${dir}`));
-  let files= await readdir('.')
-  let arr=[]
-  let exts=['.ts','.js']
+  let files = await readdir(".");
+  let arr = [];
+  let exts = [".ts", ".js"];
   for (const item of files) {
-    
     if (exts.includes(extname(item))) {
       arr.push(`@[code](${dir}/${item})\n`);
     }
-    
   }
-   
-  await writeFile('code.txt',arr.join(''))
+
+  await writeFile("code.txt", arr.join(""));
 }
 export async function genTxt(dir: string) {
   let files = await readdir(dir);
@@ -115,25 +120,22 @@ async function fileRename(filePath: string, options: RenameParams) {
     // console.log("file dir =>", filedir);
     //根据文件路径获取文件信息，返回一个fs.Stats对象
     try {
-
       let stats = await stat(filedir);
       let isFile = stats.isFile(); //是文件
       let isDir = stats.isDirectory(); //是文件夹
       if (isFile) {
         if (options.fromExt.includes(path.extname(filedir))) {
-         rename(
-           filedir,
-           filedir.replace(path.extname(filedir), options.toExt),
-         ).then(() => {
-           console.log(
-             `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
-               path.basename(
-                 filedir.replace(path.extname(filedir), options.toExt)
-               )
-             )}`
-           );
-         })
-
+          console.log(
+            `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
+              path.basename(
+                filedir.replace(path.extname(filedir), options.toExt),
+              ),
+            )}`,
+          );
+          await rename(
+            filedir,
+            filedir.replace(path.extname(filedir), options.toExt),
+          );
         }
       }
       if (isDir) {
@@ -146,8 +148,6 @@ async function fileRename(filePath: string, options: RenameParams) {
       throw e;
     }
   }
-
-
 }
 
 /**
@@ -165,7 +165,6 @@ export async function deleteFileRecurse(ext: string, dir: string) {
     const fileStat = await stat(fullPath);
     let ignores = ["img", "vuepress", ".git", "node_modules"];
     if (fileStat.isDirectory() && !ignores.includes(item)) {
-      
       // console.log(`进入文件夹:${path.join(dir, item)}`);
       await deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
     } else {
@@ -186,13 +185,13 @@ export function toWebp(img: string, option: WebpInterface) {
   if (shell.which("cwebp")) {
     console.log(
       pc.red(
-        "你还没有安装cwebp! https://developers.google.cn/speed/webp/docs/cwebp"
-      )
+        "你还没有安装cwebp! https://developers.google.cn/speed/webp/docs/cwebp",
+      ),
     );
   }
   let script = `cwebp.exe -q ${option.quality ?? 90} ${img} -o ${img?.replace(
     reg,
-    ".webp"
+    ".webp",
   )}`;
   console.log(script);
   shell.exec(script);
@@ -223,7 +222,7 @@ export async function transferToWebp(dir: string, option: WebpInterface) {
  */
 export async function getFolderSize(
   itemPath: string,
-  options?: FilesizeOpts
+  options?: FilesizeOpts,
 ): Promise<any> {
   return await core(itemPath, options, { errors: true });
 }
@@ -231,12 +230,12 @@ export async function getFolderSize(
 async function core(
   rootItemPath: string,
   options: FilesizeOpts = {},
-  returnType: { strict?: boolean; errors?: boolean } = {}
+  returnType: { strict?: boolean; errors?: boolean } = {},
 ) {
   // const fs = options.fs || (await import("fs/promises"));
   let fileNum = {
     all: 0,
-    folder: 0
+    folder: 0,
   };
   const fileSizes = new Map();
   const errors: Error[] = [];
@@ -247,21 +246,21 @@ async function core(
     if (options.ignore?.test(itemPath)) return;
 
     const stats = returnType.strict
-      ? await lstat (itemPath)
-      : await lstat (itemPath);
+      ? await lstat(itemPath)
+      : await lstat(itemPath);
     if (typeof stats !== "object") return;
     fileSizes.set(stats.ino, stats.size);
 
     if (stats.isDirectory()) {
       ++fileNum.folder;
       const directoryItems = returnType.strict
-        ?  await readdir(itemPath)
-        :  await readdir(itemPath);
+        ? await readdir(itemPath)
+        : await readdir(itemPath);
       if (typeof directoryItems !== "object") return;
       await Promise.all(
         directoryItems.map((directoryItem: string) =>
-          processItem(join(itemPath, directoryItem))
-        )
+          processItem(join(itemPath, directoryItem)),
+        ),
       );
     }
     ++fileNum.all;
@@ -269,7 +268,7 @@ async function core(
 
   const folderSize = Array.from(fileSizes.values()).reduce(
     (total, fileSize) => total + fileSize,
-    0
+    0,
   );
 
   if (returnType.errors) {
@@ -278,7 +277,7 @@ async function core(
       all: fileNum.all,
       folder: fileNum.folder,
       num: fileNum.all - fileNum.folder,
-      errors: errors.length > 0 ? errors : null
+      errors: errors.length > 0 ? errors : null,
     };
   } else {
     return folderSize;
