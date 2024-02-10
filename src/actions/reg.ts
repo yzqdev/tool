@@ -3,7 +3,7 @@ import shell from "shelljs";
 import pc from "picocolors";
 import inquirer from "inquirer";
 import fs from "node:fs";
-import { writeFile } from "fs/promises";
+import { writeFile } from "node:fs/promises";
 import { fixUrl, isWin, npmrc } from "../utils/npmrc";
 import { EnvPrompt } from "../interfaces/npmInterface";
 import { ToolConfig } from "../toolConfig";
