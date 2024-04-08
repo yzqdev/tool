@@ -126,7 +126,7 @@ async function fileRename(filePath: string, options: RenameParams) {
       if (isFile) {
         if (options.fromExt.includes(path.extname(filedir))) {
           console.log(
-            `rename ${pc.cyan(path.basename(filedir))} to ${pc.cyan(
+            `rename ${pc.cyan(filedir)} to ${pc.cyan(
               path.basename(
                 filedir.replace(path.extname(filedir), options.toExt),
               ),
