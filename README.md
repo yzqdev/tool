@@ -32,6 +32,12 @@ Commands:
   cmd              显示常用的cmd命令
 ```
 
+## 开发
+```
+bun link --link-native-bins 
+# 然后就可以直接执行 tool命令了
+```
+
 ## License
 
 MIT License © 2022 [yzqdev](https://github.com/yzqdev)
