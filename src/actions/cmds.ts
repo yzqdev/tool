@@ -22,3 +22,13 @@ export function flutterCommands() {
 
   console.log(table.toString());
 }
+export function nameCommands(){
+  const genshinNames:string[]=['jean','amber','lisa','kaeya','barbara','diluc','razor','venti','klee','noelle','mona','diona','eula','aloy','mika']
+  const starrailNames: string[] = [];
+  const waveNames: string[] = [];
+  const otherNames: string[] = [];
+  const all=[...genshinNames,...starrailNames,...waveNames,...otherNames]
+  const len=all.length
+  const rand = Math.floor(Math.random() * len) + 1;
+  console.log(all[rand])
+}

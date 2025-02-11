@@ -1,6 +1,6 @@
 import { pipeline } from "node:stream/promises";
 
-import got from "got";
+import axios from 'axios'
 
 import crypto from "crypto";
 import mime from "mime";
@@ -296,12 +296,12 @@ export async function genMarkdownImgs(file: string) {
       // Do something with it.
     };
 
-    const req = got(url, { encoding: "binary" });
+    const req = axios.get(url );
     let contentType = (await req).headers["content-type"]!;
     let fileName = fileId + "." + mime.getExtension(contentType);
 
     finalMd = `![${replacerFileName(url)}](./${imgFolder}/${fileName})`;
-    await writeFile(path.join(folder, fileName), await req.buffer());
+    await writeFile(path.join(folder, fileName),  (await req).data);
     return finalMd;
   }
 }

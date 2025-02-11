@@ -1,6 +1,7 @@
 import { Command } from "commander";
 import {
   flutterCommands,
+  nameCommands,
   npmActions,
   pnpmCommands,
   yarnActions,
@@ -32,5 +33,11 @@ export function CmdCommand(program: Command) {
     .description("flutter常用命令")
     .action(() => {
       flutterCommands();
+    });
+  cmdCommand
+    .command("name")
+    .description("name 用法")
+    .action(() => {
+      nameCommands()
     });
 }
