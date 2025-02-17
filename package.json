@@ -14,13 +14,12 @@
   },
   "license": "MIT",
   "files": [
+    "src",
     "dist",
     "vendor"
   ],
-  "main": "bin/tool.mjs",
-  "module": "bin/tool.mjs",
   "bin": {
-    "tool": "bin/tool.mjs"
+    "tool": "src/index.ts"
   },
   "keywords": [
     "cli",
@@ -28,14 +27,19 @@
     "terminal",
     "utils"
   ],
+  "type": "module",
+  "module": "src/index.ts",
   "scripts": {
-    "dev": "node bin/tool.mjs",
+    "dev": "bun run src/index.ts",
     "clean": "rimraf dist",
     "devbuild": "tsup --config tsup.dev.ts",
     "build": "tsup",
     "unbuild": "unbuild",
     "lint": "prettier --write src/**/*.{ts,js} package.json tsconfig.json",
     "p": "tsup&&pnpm dlx bumpp&&npm publish"
+  },
+  "peerDependencies": {
+    "typescript": "^5.7.3"
   },
   "dependencies": {
     "@sindresorhus/tsconfig": "^7.0.0",
@@ -47,13 +51,13 @@
     "execa": "^9.5.2",
     "express": "^4.21.2",
     "fast-glob": "^3.3.3",
-    "inquirer": "^12.4.1",
+    "inquirer": "^12.4.2",
     "mime": "^4.0.6",
-    "nanoid": "^5.0.9",
+    "nanoid": "^5.1.0",
     "open": "^10.1.0",
     "ora": "^8.2.0",
     "picocolors": "^1.1.1",
-    "prettier": "^3.5.0",
+    "prettier": "^3.5.1",
     "pretty-bytes": "^6.1.1",
     "prompts": "^2.4.2",
     "rc-config-loader": "^4.1.3",
@@ -64,15 +68,12 @@
     "typescript": "^5.7.3"
   },
   "devDependencies": {
+    "@types/bun": "^1.2.2",
     "@types/inquirer": "^9.0.7",
     "@types/mime": "^4.0.0",
-    "@types/node": "^22.13.1",
     "@types/serve-index": "^1.9.4",
     "@types/shelljs": "^0.8.15",
     "tsup": "^8.3.6",
     "unbuild": "^3.3.1"
-  },
-  "engines": {
-    "node": ">=16"
   }
 }

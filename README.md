@@ -34,7 +34,7 @@ Commands:
 
 ## 开发
 ```
-bun link --link-native-bins 
+bun link --link-native-bins 或者直接bun link
 # 然后就可以直接执行 tool命令了
 ```
 
