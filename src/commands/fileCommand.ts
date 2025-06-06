@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import fse from "fs-extra";
 import {
   deleteByExtension,
   genCodeDemo,
@@ -88,6 +89,18 @@ export function FileCommand(program: Command): void {
         console.log("没有参数");
         transferToWebp(path.resolve(), option);
       }
+    });
+  fileCmd
+    .command("lang [jsonFile]")
+    .description("转换minecraft语言为provider")
+    .action((jsonFile) => {
+      const langJson = fse.readFileSync(jsonFile).toString();
+
+      const provider: string[] = [];
+      Object.entries(JSON.parse(langJson)).forEach(([k, v]) => {
+        provider.push(`add("${k}","${v}");\n`);
+      });
+      fse.writeFileSync("zh_cn.txt", provider.join(""));
     });
   fileCmd
     .command("size [folder]")
