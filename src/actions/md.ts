@@ -1,13 +1,13 @@
 import { pipeline } from "node:stream/promises";
-
-import axios from 'axios'
+import fs from "node:fs";
+import axios from "axios";
 
 import crypto from "crypto";
 import mime from "mime";
 
 import pc from "picocolors";
 //操作路径
-import path from "path";
+import path from "node:path";
 import { DirPath, SingleDirPath } from "@/interfaces/mdInterface";
 import { accessSync, createWriteStream, existsSync } from "node:fs";
 import { readdir, readFile, stat, writeFile, mkdir } from "node:fs/promises";
@@ -296,12 +296,44 @@ export async function genMarkdownImgs(file: string) {
       // Do something with it.
     };
 
-    const req = axios.get(url );
+    const req = axios.get(url);
     let contentType = (await req).headers["content-type"]!;
     let fileName = fileId + "." + mime.getExtension(contentType);
 
     finalMd = `![${replacerFileName(url)}](./${imgFolder}/${fileName})`;
-    await writeFile(path.join(folder, fileName),  (await req).data);
+    await writeFile(path.join(folder, fileName), (await req).data);
     return finalMd;
   }
 }
+
+export function addLanguageIdentity(filePath: string,langId:string='ts') {
+  if (!filePath) {
+    console.error("请提供 Markdown 文件路径");
+    
+    process.exit(1);
+  }
+  const content = fs.readFileSync(filePath, "utf8");
+ 
+  // 正则表达式解释:
+  // 1. /```(\S+)?[ \t]*\n/ - 匹配代码块开始标记
+  //   - ``` 匹配三个反引号
+  //   - (\S+)? 可选的非空白字符（语言标识）
+  //   - [ \t]* 可选的空格或制表符
+  //   - \n 换行符（标记代码开始）
+  // 2. ([\s\S]*?) - 非贪婪匹配任意字符（包括换行）直到结束标记
+  // 3. ``` - 结束标记
+  const regex = /^ {0,3}``` *(\S*)? *\r?\n([\s\S]*?)^ {0,3}```\s*$/gm;
+ 
+  const processed = content.replace(regex, (match, lang, code) => {
+    // 如果存在语言标识，保留原样
+    if (lang){ return match;}
+    
+    // 没有语言标识时，添加 'ts' 并保留代码内容
+    return "```"+langId+"\n" + code + "```";
+  });
+
+  fs.writeFileSync(filePath, processed, "utf8");
+  console.log(`Processed: ${path.basename(filePath)}`);
+}
+
+ 
