@@ -5,7 +5,8 @@ import { WebpInterface } from "@/interfaces";
 import { RenameOption, RenameParams } from "@/interfaces/Ioption";
 import { FilesizeOpts } from "@/interfaces/actionOpts";
 import { basename, extname, join } from "node:path";
-
+import { exec } from "node:child_process";
+import { promisify } from "node:util";
 import {
   lstat,
   readdir,
@@ -17,6 +18,56 @@ import {
 } from "fs/promises";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
+const execAsync = promisify(exec);
+
+/**
+ * 使用 PowerShell 获取文件夹大小和文件/文件夹数量
+ */
+export async function getFolderSizeUsePwsh(itemPath: string): Promise<any> {
+  // 构建 PowerShell 命令
+  // 1. 获取所有子项（递归）
+  // 2. 分别计算总大小、文件总数、文件夹总数
+  const absPath = path.resolve(itemPath);
+
+ 
+  const psCommand = `
+    $items = Get-ChildItem -Path "${absPath}" -Recurse -ErrorAction SilentlyContinue;
+    $stats = $items | Measure-Object -Property Length -Sum;
+    $fileCount = ($items | Where-Object { !$_.PSIsContainer }).Count;
+    $folderCount = ($items | Where-Object { $_.PSIsContainer }).Count;
+    @{
+        size = if ($stats.Sum -eq $null) { 0 } else { $stats.Sum };
+        all = $fileCount + $folderCount;
+        files = if ($fileCount -eq $null) { 0 } else { $fileCount };
+        folders = if ($folderCount -eq $null) { 0 } else { $folderCount };
+    } | ConvertTo-Json
+  `;
+
+  try {
+    // 调用 PowerShell (设置 powershell 编码为 UTF8 避免中文路径乱码)
+    const { stdout } = await execAsync(
+      `powershell -NoProfile -Command "${psCommand.replace(/\n/g, "")}"`,
+      {
+        maxBuffer: 1024 * 1024 * 10, // 增加 buffer 以防输出过多
+      },
+    );
+
+    const result = JSON.parse(stdout);
+
+    return {
+      size: result.size,
+      all: result.all,
+      folder: result.folders,
+      num: result.files,
+      errors: null,
+    };
+  } catch (e) {
+    console.error(pc.red("PowerShell 查询失败:"), e);
+    // 如果失败，可以降级回你原来的 JS 递归逻辑，或者直接报错
+    throw e;
+  }
+}
+
 
 export async function getSimpleMd5(file: string) {
   const buffer = await readFile(file);
