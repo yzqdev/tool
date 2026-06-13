@@ -59,12 +59,12 @@ export function MarkCommand(program: Command): void {
       await genMarkdownImgs(file);
     });
 
-    md.command("addLang")
-      .argument("<file>", "要装换的文件")
-      .description("添加代码块标识符")
-      .option("-l, --lang <langId>", "语言id")
-      .action(async (file,option:{lang:string}) => {
-        console.log(file,option.lang)
-        addLanguageIdentity(file,option.lang);
-      });
+  md.command("addLang")
+    .argument("<file>", "要装换的文件")
+    .description("添加代码块标识符")
+    .option("-l, --lang <langId>", "语言id")
+    .action(async (file, option: { lang: string }) => {
+      console.log(file, option.lang);
+      addLanguageIdentity(file, option.lang);
+    });
 }

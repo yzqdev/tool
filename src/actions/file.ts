@@ -4,32 +4,38 @@ import shell from "shelljs";
 import { WebpInterface } from "@/interfaces";
 import { RenameOption, RenameParams } from "@/interfaces/Ioption";
 import { FilesizeOpts } from "@/interfaces/actionOpts";
-import { basename, extname, join } from "node:path";
 import { exec } from "node:child_process";
 import { promisify } from "node:util";
 import {
-  lstat,
   readdir,
   readFile,
   rename,
   stat,
+  lstat,
   unlink,
   writeFile,
 } from "fs/promises";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
+import { walkDir } from "@/utils/walkDir";
+
 const execAsync = promisify(exec);
 
 /**
  * 使用 PowerShell 获取文件夹大小和文件/文件夹数量
  */
-export async function getFolderSizeUsePwsh(itemPath: string): Promise<any> {
+export async function getFolderSizeUsePwsh(itemPath: string): Promise<{
+  size: number;
+  all: number;
+  folder: number;
+  num: number;
+  errors: Error[] | null;
+}> {
   // 构建 PowerShell 命令
   // 1. 获取所有子项（递归）
   // 2. 分别计算总大小、文件总数、文件夹总数
   const absPath = path.resolve(itemPath);
 
- 
   const psCommand = `
     $items = Get-ChildItem -Path "${absPath}" -Recurse -ErrorAction SilentlyContinue;
     $stats = $items | Measure-Object -Property Length -Sum;
@@ -68,27 +74,27 @@ export async function getFolderSizeUsePwsh(itemPath: string): Promise<any> {
   }
 }
 
+export function getLargeMd5(file: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const start = performance.now();
+    const stream = createReadStream(file);
+    const hash = createHash("md5");
 
-export async function getSimpleMd5(file: string) {
-  const buffer = await readFile(file);
-  const hash = createHash("md5");
-  // @ts-ignore
-  hash.update(buffer, "utf8");
-  const md5 = hash.digest("hex");
-  console.log(pc.cyan(md5));
-}
-export async function getLargeMd5(file: string) {
-  let start = performance.now();
-  const stream = createReadStream(file);
-  const hash = createHash("md5");
-  stream.on("data", (chunk: any) => {
-    hash.update(chunk, "utf8");
-  });
-  stream.on("end", () => {
-    const md5 = hash.digest("hex");
-    console.log(md5);
-    let end = performance.now();
-    console.log(`用时:${(end - start) / 1000}s`);
+    stream.on("data", (chunk: Buffer) => {
+      hash.update(chunk);
+    });
+
+    stream.on("end", () => {
+      const md5 = hash.digest("hex");
+      const end = performance.now();
+      console.log(`MD5: ${md5}`);
+      console.log(`用时:${(end - start) / 1000}s`);
+      resolve(md5);
+    });
+
+    stream.on("error", (err) => {
+      reject(err);
+    });
   });
 }
 export async function genCodeDemo(dir: string) {
@@ -97,7 +103,7 @@ export async function genCodeDemo(dir: string) {
   let arr = [];
   let exts = [".ts", ".js"];
   for (const item of files) {
-    if (exts.includes(extname(item))) {
+    if (exts.includes(path.extname(item))) {
       arr.push(`@[code](${dir}/${item})\n`);
     }
   }
@@ -159,46 +165,17 @@ export async function renameToTs(dir: string, options: RenameOption) {
 }
 
 async function fileRename(filePath: string, options: RenameParams) {
-  let excludeDir = ["node_modules", ".vuepress", ".git"];
-  //   console.log(8977)
-  //根据文件路径读取文件，返回文件列表
-  let files = await readdir(filePath);
-
-  //遍历读取到的文件列表
-  for (const filename of files) {
-    //获取当前文件的绝对路径
-    let filedir = path.join(filePath, filename);
-    // console.log("file dir =>", filedir);
-    //根据文件路径获取文件信息，返回一个fs.Stats对象
-    try {
-      let stats = await stat(filedir);
-      let isFile = stats.isFile(); //是文件
-      let isDir = stats.isDirectory(); //是文件夹
-      if (isFile) {
-        if (options.fromExt.includes(path.extname(filedir))) {
-          console.log(
-            `rename ${pc.cyan(filedir)} to ${pc.cyan(
-              path.basename(
-                filedir.replace(path.extname(filedir), options.toExt),
-              ),
-            )}`,
-          );
-          await rename(
-            filedir,
-            filedir.replace(path.extname(filedir), options.toExt),
-          );
-        }
+  await walkDir(filePath, async (filedir, fileStat) => {
+    if (fileStat.isFile()) {
+      if (options.fromExt.includes(path.extname(filedir))) {
+        const newPath = filedir.replace(path.extname(filedir), options.toExt);
+        console.log(
+          `rename ${pc.cyan(filedir)} to ${pc.cyan(path.basename(newPath))}`,
+        );
+        await rename(filedir, newPath);
       }
-      if (isDir) {
-        if (!excludeDir.includes(path.basename(filedir))) {
-          await fileRename(filedir, options);
-        } //递归，如果是文件夹，就继续遍历该文件夹下面的文件
-      }
-    } catch (e) {
-      console.warn("获取文件stats失败");
-      throw e;
     }
-  }
+  });
 }
 
 /**
@@ -207,24 +184,12 @@ async function fileRename(filePath: string, options: RenameParams) {
  * @param dir
  */
 export async function deleteFileRecurse(ext: string, dir: string) {
-  const files = await readdir(dir);
-
-  for (const item of files) {
-    const index = files.indexOf(item);
-    let fullPath = path.join(dir, item);
-    // console.log(pc.red(fullPath));
-    const fileStat = await stat(fullPath);
-    let ignores = ["img", "vuepress", ".git", "node_modules"];
-    if (fileStat.isDirectory() && !ignores.includes(item)) {
-      // console.log(`进入文件夹:${path.join(dir, item)}`);
-      await deleteFileRecurse(ext, path.join(dir, item)); //递归读取文件
-    } else {
-      if (path.extname(item) == `${ext}`) {
-        await unlink(path.join(dir, item));
-        console.log(pc.red(`删除的路径=> ${path.join(dir, item)}`));
-      }
+  await walkDir(dir, async (fullPath, fileStat) => {
+    if (fileStat.isFile() && path.extname(fullPath) === ext) {
+      await unlink(fullPath);
+      console.log(pc.red(`删除的路径=> ${fullPath}`));
     }
-  }
+  });
 }
 
 export async function deleteByExtension(ext: string, dir: string = "./") {
@@ -232,18 +197,17 @@ export async function deleteByExtension(ext: string, dir: string = "./") {
 }
 
 export function toWebp(img: string, option: WebpInterface) {
-  let reg = new RegExp(/(.jpg|.png|.jpeg|.gif|.bmp)$/);
-  if (shell.which("cwebp")) {
+  const reg = /(\.(?:jpg|png|jpeg|gif|bmp))$/i;
+  if (!shell.which("cwebp")) {
     console.log(
       pc.red(
         "你还没有安装cwebp! https://developers.google.cn/speed/webp/docs/cwebp",
       ),
     );
+    return;
   }
-  let script = `cwebp.exe -q ${option.quality ?? 90} ${img} -o ${img?.replace(
-    reg,
-    ".webp",
-  )}`;
+  const out = img?.replace(reg, ".webp");
+  const script = `cwebp.exe -q ${option.quality ?? 90} "${img}" -o "${out}"`;
   console.log(script);
   shell.exec(script);
   console.log(pc.cyan("转换成功!"));
@@ -274,7 +238,13 @@ export async function transferToWebp(dir: string, option: WebpInterface) {
 export async function getFolderSize(
   itemPath: string,
   options?: FilesizeOpts,
-): Promise<any> {
+): Promise<{
+  size: number;
+  all: number;
+  folder: number;
+  num: number;
+  errors: Error[] | null;
+}> {
   return await core(itemPath, options, { errors: true });
 }
 
@@ -282,7 +252,16 @@ async function core(
   rootItemPath: string,
   options: FilesizeOpts = {},
   returnType: { strict?: boolean; errors?: boolean } = {},
-) {
+): Promise<
+  | {
+      size: number;
+      all: number;
+      folder: number;
+      num: number;
+      errors: Error[] | null;
+    }
+  | number
+> {
   // const fs = options.fs || (await import("fs/promises"));
   let fileNum = {
     all: 0,
@@ -296,21 +275,17 @@ async function core(
   async function processItem(itemPath: string) {
     if (options.ignore?.test(itemPath)) return;
 
-    const stats = returnType.strict
-      ? await lstat(itemPath)
-      : await lstat(itemPath);
+    const stats = await lstat(itemPath);
     if (typeof stats !== "object") return;
     fileSizes.set(stats.ino, stats.size);
 
     if (stats.isDirectory()) {
       ++fileNum.folder;
-      const directoryItems = returnType.strict
-        ? await readdir(itemPath)
-        : await readdir(itemPath);
+      const directoryItems = await readdir(itemPath);
       if (typeof directoryItems !== "object") return;
       await Promise.all(
         directoryItems.map((directoryItem: string) =>
-          processItem(join(itemPath, directoryItem)),
+          processItem(path.join(itemPath, directoryItem)),
         ),
       );
     }

@@ -1,2 +1,2 @@
-export * from './dirs'
-export * from './strs'
+export * from "./dirs";
+export * from "./strs";

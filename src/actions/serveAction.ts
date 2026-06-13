@@ -11,8 +11,6 @@ import path from "node:path";
 export async function expServer(option: ServeOption) {
   let port = option.port ?? 3000;
   const app = express();
-  console.log(path.resolve());
-  console.log(option.dir);
   let dir = option.dir ?? "/";
   app.use(
     dir,
@@ -20,7 +18,7 @@ export async function expServer(option: ServeOption) {
     serveIndex(path.resolve(), { icons: true }),
   );
 
-  app.listen(port, () => {
+  const server = app.listen(port, () => {
     let message = pc.green("Serving!");
     const ip = getNetworkAddress();
     let httpMode = "http";
@@ -46,9 +44,13 @@ export async function expServer(option: ServeOption) {
       }),
     );
   });
+
+  registerShutdown(() => {
+    server.close();
+  });
 }
 
-const registerShutdown = (fn: Function) => {
+const registerShutdown = (fn: () => void) => {
   let run = false;
 
   const wrapper = () => {
@@ -63,9 +65,9 @@ const registerShutdown = (fn: Function) => {
   process.on("exit", wrapper);
 };
 export const getNetworkAddress = () => {
-  const interfaces: any = os.networkInterfaces();
+  const interfaces = os.networkInterfaces();
   for (const name of Object.keys(interfaces)) {
-    for (const osinterface of interfaces[name]) {
+    for (const osinterface of interfaces[name]!) {
       const { address, family, internal } = osinterface;
       if (family === "IPv4" && !internal) {
         return address;

@@ -1,4 +1,3 @@
-
 import * as commander from "commander";
 
 import { CommandLoader } from "./commands/loader";

@@ -3,12 +3,12 @@ import shell from "shelljs";
 import pc from "picocolors";
 import inquirer from "inquirer";
 import fs from "node:fs";
-import { writeFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { fixUrl, isWin, npmrc } from "../utils/npmrc";
 import { EnvPrompt } from "../interfaces/npmInterface";
 import { ToolConfig } from "../toolConfig";
 import { confPath, npmrcPath, pipPath } from "../constants/dirs";
-import { copy, copyFile, vendorFile } from "../utils/fileUtils";
+import { copy, vendorFile } from "../utils/fileUtils";
 
 export async function setAllReg() {
   let toolConfig = new ToolConfig();
@@ -139,59 +139,44 @@ export function setFlutter() {
   });
 }
 
-export function setNodeEnv() {
+export async function setNodeEnv() {
   fixUrl(npmrc);
 
-  fs.readFile(npmrcPath, (err, content) => {
-    if (err) {
-      throw err;
-    }
-    // 按行遍历原有配置，改其内容
-    let config: string | string[] = content
-      .toString()
-      .match(/^.*$/gm)!
-      .filter((line) => {
-        let [, matchStr] = line.match(/^(.+?)\s*=/) ?? [""];
+  const content = await readFile(npmrcPath, "utf-8");
+  const lines = content.split("\n");
 
-        return !(matchStr?.toLowerCase() in npmrc);
-      });
-
-    while (config.length && !config[config.length - 1]) {
-      config.pop();
-    }
-
-    if (config.length) {
-      config.push("");
-    }
-
-    // 将文件中没有的配置项，追加到其末尾
-
-    Object.keys(npmrc).forEach((key) => {
-      console.log(key);
-      if (npmrc[key]) {
-        console.log("> npm config set", key, npmrc[key]);
-        if (typeof config !== "string") {
-          config.push(key + "=" + npmrc[key]);
-        }
-      }
-    });
-
-    if (config[config.length - 1]) {
-      config.push("");
-    }
-
-    // 将配置转换为字符串
-    config = config.join("\n");
-    // 如果文件内容有变化，保存结果
-    if (content.toString() !== config) {
-      fs.writeFileSync(npmrcPath, config);
-    }
+  const config = lines.filter((line) => {
+    const match = line.match(/^(.+?)\s*=/);
+    return !(match?.[1]?.toLowerCase() in npmrc);
   });
+
+  while (config.length && !config[config.length - 1]) {
+    config.pop();
+  }
+
+  if (config.length) {
+    config.push("");
+  }
+
+  for (const key of Object.keys(npmrc)) {
+    if (npmrc[key]) {
+      config.push(key + "=" + npmrc[key]);
+    }
+  }
+
+  if (config[config.length - 1]) {
+    config.push("");
+  }
+
+  const result = config.join("\n");
+  if (content !== result) {
+    await writeFile(npmrcPath, result);
+  }
 }
 export async function removeConfigs() {
   if (fs.existsSync(confPath)) {
     fs.unlinkSync(confPath);
-    let result = await inquirer.prompt([
+    const result = await inquirer.prompt([
       {
         name: "npmrc",
         type: "confirm",

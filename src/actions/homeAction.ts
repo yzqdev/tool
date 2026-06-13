@@ -1,6 +1,6 @@
 import shell from "shelljs";
 import open from "open";
-import axios from 'axios'
+import axios from "axios";
 interface PypiRes {
   info: {
     home_page: string;
@@ -14,19 +14,27 @@ interface PubRes {
 export async function openPypiHome(pkg: string) {
   let res: PypiRes;
   try {
-    res = (await axios.get(`https://pypi.python.org/pypi/${pkg}/json`, {
-      
-    })).data;
+    res = (await axios.get(`https://pypi.python.org/pypi/${pkg}/json`, {}))
+      .data;
     open(res.info.home_page);
   } catch (error) {
     open(`https://pypi.org/project/${pkg}`);
   }
 }
 export async function openPub(pkg: string) {
-  let res: PubRes =( await axios.get(
-    `https://pub.flutter-io.cn/api/packages/${pkg}`,
-  )).data ;
-  open(res.latest.pubspec.homepage);
+  try {
+    const res: PubRes = (
+      await axios.get(`https://pub.flutter-io.cn/api/packages/${pkg}`)
+    ).data;
+    const homepage = res.latest?.pubspec?.homepage;
+    if (homepage) {
+      open(homepage);
+    } else {
+      open(`https://pub.dev/packages/${pkg}`);
+    }
+  } catch {
+    open(`https://pub.dev/packages/${pkg}`);
+  }
 }
 export function openGit() {
   if (!shell.which("git")) {

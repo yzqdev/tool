@@ -38,6 +38,6 @@ export function CmdCommand(program: Command) {
     .command("name")
     .description("name 用法")
     .action(() => {
-      nameCommands()
+      nameCommands();
     });
 }

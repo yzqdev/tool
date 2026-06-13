@@ -13,7 +13,6 @@ import {
   transferToWebp,
 } from "@/actions/file";
 
-import crypto from "node:crypto";
 import ora from "ora";
 import pc from "picocolors";
 import prettyBytes from "pretty-bytes";
@@ -22,8 +21,12 @@ import { WebpInterface } from "@/interfaces";
 import { RenameOption } from "@/interfaces/Ioption";
 import { FilesizeResult } from "@/interfaces/actionOpts";
 import { formatDuring } from "@/utils/timeUtil";
-import { readFile } from "node:fs/promises";
 import { exec } from "node:child_process";
+import { promisify } from "node:util";
+import { readFile } from "node:fs/promises";
+
+const execAsync = promisify(exec);
+
 interface CodeOption {
   path: string;
 }
@@ -104,38 +107,36 @@ export function FileCommand(program: Command): void {
       });
       fse.writeFileSync("zh_cn.txt", provider.join(""));
     });
-    fileCmd
-      .command("folder [itemPath]")
-      .description("powershel获取文件夹大小")
-      .action(async (itemPath) => {
-       const res=await  getFolderSizeUsePwsh(itemPath);
-       console.log(res)
-      });
-    fileCmd.command("pw").description("powershell命令")
-    .action(()=>{
-      exec(
-        "wmic logicaldisk get caption,freespace,size /format:csv",
-        (err, stdout, stderr) => {
-          if (err) {
-            console.error(`执行错误: ${err}`);
-            return;
-          }
-
-          const lines = stdout.trim().split("\n").slice(1); // 去掉标题行
-          const disks = lines.map((line) => {
-            const [node, caption, freespace, size] = line.split(",");
-            return {
-              Drive: caption,
-              FreeSpaceGB:
-                (parseInt(freespace) / 1024 / 1024 / 1024).toFixed(2) + " GB",
-              SizeGB: (parseInt(size) / 1024 / 1024 / 1024).toFixed(2) + " GB",
-            };
-          });
-
-          console.table(disks);
-        },
-      );
-    })
+  fileCmd
+    .command("folder [itemPath]")
+    .description("powershel获取文件夹大小")
+    .action(async (itemPath) => {
+      const res = await getFolderSizeUsePwsh(itemPath);
+      console.log(res);
+    });
+  fileCmd
+    .command("pw")
+    .description("powershell命令")
+    .action(async () => {
+      try {
+        const { stdout } = await execAsync(
+          "wmic logicaldisk get caption,freespace,size /format:csv",
+        );
+        const lines = stdout.trim().split("\n").slice(1);
+        const disks = lines.map((line) => {
+          const [, caption, freespace, size] = line.split(",");
+          return {
+            Drive: caption,
+            FreeSpaceGB:
+              (parseInt(freespace) / 1024 / 1024 / 1024).toFixed(2) + " GB",
+            SizeGB: (parseInt(size) / 1024 / 1024 / 1024).toFixed(2) + " GB",
+          };
+        });
+        console.table(disks);
+      } catch (err) {
+        console.error(`执行错误: ${err}`);
+      }
+    });
   fileCmd
     .command("size [folder]")
     .description("查看文件夹大小")

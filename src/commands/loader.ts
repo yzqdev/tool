@@ -15,7 +15,7 @@ export class CommandLoader {
     CmdCommand(program);
     FileCommand(program);
     HelpCommand(program);
-    HomeCommand(program)
+    HomeCommand(program);
     MarkCommand(program);
     RegCommand(program);
     ServeCommand(program);
